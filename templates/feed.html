@@ -79,13 +79,15 @@
          Followers: <strong>{{ follower_count }}</strong>
     </p>
 
-    {% if profile_view.lower() != current_user.lower() %}
-    <form action="/follow/{{ profile_view }}" method="POST" style="margin-bottom: 10px;">
-        <button type="submit" class="nav-btn" style="width:100%; border-radius:4px; font-size:13px; padding:6px; cursor:pointer; background: {% if is_following_profile %}#333{% else %}#1a73e8{% endif %}; border:none;">
-            {% if is_following_profile %} Following (Unfollow){% else %} Follow Creator{% endif %}
+       
+    {% if current_user.lower() == 'mear' and profile_view and profile_view.lower() != 'mear' %}
+    <form action="/toggle_mod/{{ profile_view }}" method="POST" style="margin-top: 10px; margin-bottom: 10px;">
+        <button type="submit" class="nav-btn" style="width:100%; border-radius:4px; font-size:12px; padding:6px; cursor:pointer; font-weight: bold; background: {% if is_target_profile_mod %}#ea4335{% else %}#34a853{% endif %}; border:none; color: white;">
+            {% if is_target_profile_mod %}🛑 Revoke Mod Status{% else %}👑 Grant Moderator Status{% endif %}
         </button>
     </form>
     {% endif %}
+
 
     <div class="upload-card">
         <h3>Create a Post</h3>
