@@ -19,7 +19,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 USER_REGISTRY_FILE = os.path.join(os.path.dirname(__file__), "secure_users.txt")
 
 # ⚡ MODERATOR CONFIG: Hardcodes 'Mear' as the head of the Meme Quality Control Committee
-MODERATORS = {'mear'}
+MODERATORS = {'mear','mr-zombii'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
