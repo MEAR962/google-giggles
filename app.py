@@ -225,7 +225,7 @@ def feed():
     is_current_user_mod = session['username'].lower() in get_moderators_list()
 
 
-    if is_current_user_mod:
+   if is_current_user_mod:
         for f in os.listdir(app.config['UPLOAD_FOLDER']):
 
             if f.startswith('pending_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg')):
@@ -242,7 +242,7 @@ def feed():
                     with open(cap_p, "r", encoding="utf-8") as cap_f:
                         cap = cap_f.read()
 
-                pending_queue.append({"filename": f, "creator": creator_name, "caption": cap})
+                  pending_queue.append({"filename": f, "creator": creator_name, "caption": cap})
 
 
         response = make_response(render_template(
@@ -258,8 +258,9 @@ def feed():
         notifications=notifications[:15],
         is_mod=is_current_user_mod,
         pending_queue=pending_queue,
-        is_target_profile_mod=is_target_profile_mod  
+        is_target_profile_mod=is_target_profile_mod
     ))
+
 
 
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
