@@ -6,19 +6,15 @@ app = Flask(__name__)
 app.secret_key = "google_giggles_ultra_secure_session_key"
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
-# ⚡ UPDATED: Now accepts images and GIFs alongside standard highlight tracks
 ALLOWED_EXTENSIONS = {'mp4', 'gif', 'png', 'jpg', 'jpeg'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# 150MB is more than enough for a pre-cut 60-second high-quality clip!
 app.config['MAX_CONTENT_LENGTH'] = 150 * 1024 * 1024
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ⚡ SECURE: Moves the user registry out of the public static folder completely!
 USER_REGISTRY_FILE = os.path.join(os.path.dirname(__file__), "secure_users.txt")
 
-# ⚡ MODERATOR CONFIG: Hardcodes 'Mear' as the head of the Meme Quality Control Committee
 MODERATORS = {'mear','mr-zombii'}
 
 def allowed_file(filename):
@@ -58,7 +54,7 @@ def feed():
         return redirect(url_for('login_screen'))
 
     profile_view = request.args.get('profile', '').strip()
-    search_query = request.args.get('q', '').strip().lower() # ⚡ NEW: Capture search keywords
+    search_query = request.args.get('q', '').strip().lower()
 
     if request.method == 'POST':
         if 'media_file' not in request.files:
@@ -75,7 +71,6 @@ def feed():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
 
-            # ⚡ MOD CHECK: If you (Mear) post a clip, it goes live instantly. Anyone else goes to queue!
             is_mod = session['username'].lower() in MODERATORS
             prefix = f"{session['username']}_" if is_mod else f"pending_{session['username']}_"
 
@@ -98,7 +93,7 @@ def feed():
                 with open(caption_path, "w", encoding="utf-8") as f:
                     f.write(caption_text)
 
-            # Flash a funny custom message depending on who posted it
+            
             if is_mod:
                 flash('Meme posted live instantly by Chief Executive Officer Mear!')
             else:
@@ -107,7 +102,6 @@ def feed():
             return redirect(url_for('feed', profile=session['username']))
 
 
-    # ⚡ SEARCH ENGINE LAYER 1: Scan user registry for related accounts
     matched_accounts = []
     if search_query and os.path.exists(USER_REGISTRY_FILE):
         with open(USER_REGISTRY_FILE, "r", encoding="utf-8") as f:
@@ -117,7 +111,7 @@ def feed():
                     matched_accounts.append(parts[0])
 
     all_files = os.listdir(app.config['UPLOAD_FOLDER'])
-    # ⚡ UPDATED: Public feed gathering loop now tracks images alongside video clips
+
     media_files = [f for f in all_files if not f.startswith('raw_') and not f.startswith('pending_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg'))]
     media_files.sort(key=lambda x: os.path.getmtime(os.path.join(app.config['UPLOAD_FOLDER'], x)), reverse=True)
 
@@ -142,9 +136,9 @@ def feed():
             with open(caption_path, "r", encoding="utf-8") as f:
                 caption = f.read()
 
-        # ⚡ SEARCH ENGINE LAYER 2: Filter clips based on title description text match
+       
         if search_query and not profile_view:
-            # If the keyword isn't in the creator's name AND isn't in the clip description, skip it!
+         
             if search_query not in creator_tag.lower() and search_query not in caption.lower():
                 continue
 
@@ -167,14 +161,14 @@ def feed():
             "caption": caption
         })
 
-    # ⚡ FIXED: Scan the registry files to load bios case-insensitively!
+   
     user_bio = ""
     bio_user = profile_view if profile_view else session['username']
 
-    # 1. Look for the exact filename style match first
+
     bio_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user}_bio.txt")
 
-    # 2. If it isn't found exactly, do a case-insensitive search across your uploads folder
+  
     if not os.path.exists(bio_path):
         for f in os.listdir(app.config['UPLOAD_FOLDER']):
             if f.lower() == f"{bio_user.lower()}_bio.txt":
@@ -185,7 +179,6 @@ def feed():
         with open(bio_path, "r", encoding="utf-8") as f:
             user_bio = f.read()
 
-    # ⚡ FIXED: Added the missing follow calculations right here so the variables exist!
     current_following = get_following_list(session['username'])
     is_following_profile = profile_view.lower() in current_following if profile_view else False
 
@@ -197,21 +190,20 @@ def feed():
                     if profile_view.lower() in [line.strip().lower() for line in list_f.readlines()]:
                         follower_count += 1
 
-    # ⚡ FIXED: Added the missing notification parser right here!
+  
     notifications = []
     notif_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_notifications.txt")
     if os.path.exists(notif_path):
         with open(notif_path, "r", encoding="utf-8") as f:
             notifications = [line.strip() for line in f.readlines() if line.strip()]
         notifications.reverse()
-    # ⚡ MOD ACCELERATOR: If the user is Mear, load all pending funny-verification checks
-    # ⚡ FIXED: This empty list now initializes for EVERYONE, preventing the crash!
+ 
     pending_queue = []
     is_current_user_mod = session['username'].lower() in MODERATORS
 
     if is_current_user_mod:
         for f in os.listdir(app.config['UPLOAD_FOLDER']):
-            # ⚡ UPDATED: Gathers pending images alongside videos for your Mod desk view
+       
             if f.startswith('pending_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg')):
                 try:
                     creator_name = f.split('_', 2)[1]
@@ -228,7 +220,7 @@ def feed():
 
                 pending_queue.append({"filename": f, "creator": creator_name, "caption": cap})
 
-    # ⚡ FIXED: Moved completely outside the block so it runs for both Mods and Guests perfectly!
+
     response = make_response(render_template(
         'feed.html',
         posts=posts_data,
@@ -244,11 +236,11 @@ def feed():
         pending_queue=pending_queue
     ))
 
-    # Enable security isolation so WebAssembly works
+ 
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
 
-    # Force Fedora web browsers to never cache form memory or scripts
+  
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -299,10 +291,10 @@ def like_post(filename):
             except ValueError: c = 0
     with open(p, "w", encoding="utf-8") as f:
         f.write(str(c + 1))
-        # Put this inside your like_post route right before the return statement:
+  
     creator_name = filename.split("_", 1)[0] if "_" in filename else None
     if creator_name and creator_name.lower() != session['username'].lower():
-        add_notification(creator_name, f"❤️ @{session['username']} liked your clip ({base_name})!")
+        add_notification(creator_name, f" @{session['username']} liked your clip ({base_name})!")
 
     return redirect(url_for('feed'))
 
@@ -310,15 +302,15 @@ def like_post(filename):
 def add_comment(filename):
     text = request.form.get('comment', '').strip()
     if text and 'username' in session:
-        # ⚡ FIXED: Added [0] index accessor pointer to correctly grab string filename prefix
+     
         base_name = filename.rsplit('.', 1)[0]
         p = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_comments.txt")
         with open(p, "a", encoding="utf-8") as f:
             f.write(f"{session['username']}: {text}\n")
-            # Put this inside your add_comment route right before the return statement:
+       
     creator_name = filename.split("_", 1)[0] if "_" in filename else None
     if creator_name and creator_name.lower() != session['username'].lower():
-        add_notification(creator_name, f"💬 @{session['username']} commented on your clip: \"{text[:20]}...\"")
+        add_notification(creator_name, f" @{session['username']} commented on your clip: \"{text[:20]}...\"")
 
     return redirect(url_for('feed'))
 @app.route('/follow/<target_username>', methods=['POST'])
@@ -337,7 +329,7 @@ def follow_user(target_username):
     else:
         with open(following_path, "a", encoding="utf-8") as f:
             f.write(target_username.lower() + "\n")
-        add_notification(target_username, f"👤 @{session['username']} started following you!")
+        add_notification(target_username, f" @{session['username']} started following you!")
 
     return redirect(url_for('feed', profile=target_username))
 
@@ -354,7 +346,7 @@ def approve_meme(filename):
         return redirect(url_for('feed'))
 
     if filename.startswith('pending_'):
-        # Rename step: drops the 'pending_' flag string out entirely
+    
         clean_name = filename.replace('pending_', '', 1)
 
         old_video_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -363,7 +355,7 @@ def approve_meme(filename):
         if os.path.exists(old_video_path):
             os.rename(old_video_path, new_video_path)
 
-        # Rename sidecar caption files matching it
+     
         old_base = filename.rsplit('.', 1)[0]
         new_base = clean_name.rsplit('.', 1)[0]
 
@@ -373,10 +365,10 @@ def approve_meme(filename):
         if os.path.exists(old_cap):
             os.rename(old_cap, new_cap)
 
-        # Notify the creator their meme passed inspection!
+           
         try:
             creator_name = filename.split('_', 2)[1]
-            add_notification(creator_name, "🎉 Success! @Mear approved your meme clip. It is now live on the public feed!")
+            add_notification(creator_name, f" Success! @{session['username']} approved your meme clip. It is now live on the public feed!")
         except Exception:
             pass
 
@@ -392,7 +384,7 @@ def reject_meme(filename):
     if filename.startswith('pending_'):
         base_name = filename.rsplit('.', 1)[0]
 
-        # Trash files to ensure un-funny recordings don't waste disk space
+   
         paths = [
             os.path.join(app.config['UPLOAD_FOLDER'], filename),
             os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_caption.txt")
@@ -400,12 +392,12 @@ def reject_meme(filename):
         for p in paths:
             if os.path.exists(p):
                 os.remove(p)
-
         try:
             creator_name = filename.split('_', 2)[1]
-            add_notification(creator_name, "❌ Your uploaded clip was rejected by @Mear for being UNFUNNY. Try harder next time!")
+            add_notification(creator_name, f" Your uploaded clip was rejected by @{session['username']} for being UNFUNNY. Try harder next time!")
         except Exception:
             pass
+
 
         flash('Unfunny post successfully dropped and deleted from storage.')
 
@@ -420,7 +412,7 @@ def register_screen():
             flash("That username tag signature is already taken!")
             return redirect(url_for('register_screen'))
 
-        # 🔒 SCRAMBLE: Blends the password and 2FA answer into unreadable math gibberish
+     
         hashed_password = generate_password_hash(password)
         hashed_answer = generate_password_hash(request.form.get('custom_answer', '').strip().lower())
 
@@ -431,7 +423,7 @@ def register_screen():
         return redirect(url_for('login_screen'))
     return render_template('register.html')
 
-# ⚡ UPDATE YOUR LOGIN ROUTE TO CHECK THE SCRAMBLED MATH:
+
 @app.route('/login', methods=['GET', 'POST'])
 def login_screen():
     if request.method == 'POST':
@@ -439,7 +431,6 @@ def login_screen():
         password = request.form.get('password', '').strip()
         user_record = find_user(username)
 
-        # 🔒 VERIFY: Compares the text password to the scrambled hash safely
         if user_record and check_password_hash(user_record['password'], password):
             if user_record['question'] and user_record['answer']:
                 return redirect(url_for('two_factor_checkpoint', username=username))
@@ -454,11 +445,10 @@ def two_factor_checkpoint(username):
     if request.method == 'POST' and user_record:
         user_answer = request.form.get('2fa_answer', '').strip().lower()
 
-        # 🔒 VERIFY: Securely checks the encrypted 2FA answer hash mapping
         if check_password_hash(user_record['answer'], user_answer):
             session['username'] = user_record['username']
             return redirect(url_for('feed'))
-        flash("❌ Incorrect security answer!")
+        flash(" Incorrect security answer!")
     return render_template('2fa.html', question=user_record['question'] if user_record else "", username=username)
 
 if __name__ == '__main__':
