@@ -5,6 +5,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = "google_giggles_ultra_secure_session_key"
 
+
+
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 ALLOWED_EXTENSIONS = {'mp4', 'gif', 'png', 'jpg', 'jpeg'}
 
@@ -14,8 +16,19 @@ app.config['MAX_CONTENT_LENGTH'] = 150 * 1024 * 1024
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 USER_REGISTRY_FILE = os.path.join(os.path.dirname(__file__), "secure_users.txt")
+ Admin, others load dynamically from file
+MODERATORS_FILE = os.path.join(os.path.dirname(__file__), "secure_mods.txt")
 
-MODERATORS = {'mear','mr-zombii'}
+def get_moderators_list():
+    accidentally lose your own admin powers
+    mods = {'mear'}
+    if os.path.exists(MODERATORS_FILE):
+        with open(MODERATORS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    mods.add(line.strip().lower())
+    return mods
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -71,8 +84,10 @@ def feed():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
 
-            is_mod = session['username'].lower() in MODERATORS
+
+            is_mod = session['username'].lower() in get_moderators_list()
             prefix = f"{session['username']}_" if is_mod else f"pending_{session['username']}_"
+
 
             unique_filename = f"{prefix}{filename}"
             final_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
@@ -93,7 +108,7 @@ def feed():
                 with open(caption_path, "w", encoding="utf-8") as f:
                     f.write(caption_text)
 
-            
+
             if is_mod:
                 flash('Meme posted live instantly by Chief Executive Officer Mear!')
             else:
@@ -136,9 +151,9 @@ def feed():
             with open(caption_path, "r", encoding="utf-8") as f:
                 caption = f.read()
 
-       
+
         if search_query and not profile_view:
-         
+
             if search_query not in creator_tag.lower() and search_query not in caption.lower():
                 continue
 
@@ -161,14 +176,14 @@ def feed():
             "caption": caption
         })
 
-   
+
     user_bio = ""
     bio_user = profile_view if profile_view else session['username']
 
 
     bio_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user}_bio.txt")
 
-  
+
     if not os.path.exists(bio_path):
         for f in os.listdir(app.config['UPLOAD_FOLDER']):
             if f.lower() == f"{bio_user.lower()}_bio.txt":
@@ -190,20 +205,23 @@ def feed():
                     if profile_view.lower() in [line.strip().lower() for line in list_f.readlines()]:
                         follower_count += 1
 
-  
+
     notifications = []
     notif_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_notifications.txt")
     if os.path.exists(notif_path):
         with open(notif_path, "r", encoding="utf-8") as f:
             notifications = [line.strip() for line in f.readlines() if line.strip()]
         notifications.reverse()
- 
+
+         is_target_profile_mod = profile_view.lower() in get_moderators_list() if profile_view else False
+
     pending_queue = []
-    is_current_user_mod = session['username'].lower() in MODERATORS
+    is_current_user_mod = session['username'].lower() in get_moderators_list()
+
 
     if is_current_user_mod:
         for f in os.listdir(app.config['UPLOAD_FOLDER']):
-       
+
             if f.startswith('pending_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg')):
                 try:
                     creator_name = f.split('_', 2)[1]
@@ -221,7 +239,7 @@ def feed():
                 pending_queue.append({"filename": f, "creator": creator_name, "caption": cap})
 
 
-    response = make_response(render_template(
+        response = make_response(render_template(
         'feed.html',
         posts=posts_data,
         current_user=session['username'],
@@ -233,14 +251,15 @@ def feed():
         follower_count=follower_count,
         notifications=notifications[:15],
         is_mod=is_current_user_mod,
-        pending_queue=pending_queue
+        pending_queue=pending_queue,
+        is_target_profile_mod=is_target_profile_mod  
     ))
 
- 
+
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
 
-  
+
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -291,10 +310,10 @@ def like_post(filename):
             except ValueError: c = 0
     with open(p, "w", encoding="utf-8") as f:
         f.write(str(c + 1))
-  
+
     creator_name = filename.split("_", 1)[0] if "_" in filename else None
     if creator_name and creator_name.lower() != session['username'].lower():
-        add_notification(creator_name, f" @{session['username']} liked your clip ({base_name})!")
+        add_notification(creator_name, f"❤️ @{session['username']} liked your clip ({base_name})!")
 
     return redirect(url_for('feed'))
 
@@ -302,15 +321,15 @@ def like_post(filename):
 def add_comment(filename):
     text = request.form.get('comment', '').strip()
     if text and 'username' in session:
-     
+
         base_name = filename.rsplit('.', 1)[0]
         p = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_comments.txt")
         with open(p, "a", encoding="utf-8") as f:
             f.write(f"{session['username']}: {text}\n")
-       
+
     creator_name = filename.split("_", 1)[0] if "_" in filename else None
     if creator_name and creator_name.lower() != session['username'].lower():
-        add_notification(creator_name, f" @{session['username']} commented on your clip: \"{text[:20]}...\"")
+        add_notification(creator_name, f"💬 @{session['username']} commented on your clip: \"{text[:20]}...\"")
 
     return redirect(url_for('feed'))
 @app.route('/follow/<target_username>', methods=['POST'])
@@ -329,7 +348,7 @@ def follow_user(target_username):
     else:
         with open(following_path, "a", encoding="utf-8") as f:
             f.write(target_username.lower() + "\n")
-        add_notification(target_username, f" @{session['username']} started following you!")
+        add_notification(target_username, f"👤 @{session['username']} started following you!")
 
     return redirect(url_for('feed', profile=target_username))
 
@@ -340,13 +359,15 @@ def clear_notifications():
         if os.path.exists(notif_path):
             os.remove(notif_path)
     return redirect(url_for('feed'))
+
 @app.route('/approve/<filename>', methods=['POST'])
 def approve_meme(filename):
-    if 'username' not in session or session['username'].lower() not in MODERATORS:
+    if 'username' not in session or session['username'].lower() not in get_moderators_list():
+
         return redirect(url_for('feed'))
 
     if filename.startswith('pending_'):
-    
+
         clean_name = filename.replace('pending_', '', 1)
 
         old_video_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -355,7 +376,7 @@ def approve_meme(filename):
         if os.path.exists(old_video_path):
             os.rename(old_video_path, new_video_path)
 
-     
+
         old_base = filename.rsplit('.', 1)[0]
         new_base = clean_name.rsplit('.', 1)[0]
 
@@ -365,10 +386,10 @@ def approve_meme(filename):
         if os.path.exists(old_cap):
             os.rename(old_cap, new_cap)
 
-           
+
         try:
             creator_name = filename.split('_', 2)[1]
-            add_notification(creator_name, f" Success! @{session['username']} approved your meme clip. It is now live on the public feed!")
+            add_notification(creator_name, f"🎉 Success! @{session['username']} approved your meme clip. It is now live on the public feed!")
         except Exception:
             pass
 
@@ -376,15 +397,17 @@ def approve_meme(filename):
 
     return redirect(url_for('feed'))
 
+
 @app.route('/reject/<filename>', methods=['POST'])
 def reject_meme(filename):
-    if 'username' not in session or session['username'].lower() not in MODERATORS:
+    if 'username' not in session or session['username'].lower() not in get_moderators_list():
+
         return redirect(url_for('feed'))
 
     if filename.startswith('pending_'):
         base_name = filename.rsplit('.', 1)[0]
 
-   
+
         paths = [
             os.path.join(app.config['UPLOAD_FOLDER'], filename),
             os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_caption.txt")
@@ -394,7 +417,7 @@ def reject_meme(filename):
                 os.remove(p)
         try:
             creator_name = filename.split('_', 2)[1]
-            add_notification(creator_name, f" Your uploaded clip was rejected by @{session['username']} for being UNFUNNY. Try harder next time!")
+            add_notification(creator_name, f"❌ Your uploaded clip was rejected by @{session['username']} for being UNFUNNY. Try harder next time!")
         except Exception:
             pass
 
@@ -412,7 +435,7 @@ def register_screen():
             flash("That username tag signature is already taken!")
             return redirect(url_for('register_screen'))
 
-     
+
         hashed_password = generate_password_hash(password)
         hashed_answer = generate_password_hash(request.form.get('custom_answer', '').strip().lower())
 
@@ -448,8 +471,38 @@ def two_factor_checkpoint(username):
         if check_password_hash(user_record['answer'], user_answer):
             session['username'] = user_record['username']
             return redirect(url_for('feed'))
-        flash(" Incorrect security answer!")
+        flash("❌ Incorrect security answer!")
     return render_template('2fa.html', question=user_record['question'] if user_record else "", username=username)
+@app.route('/toggle_mod/<target_username>', methods=['POST'])
+def toggle_mod(target_username):
+  
+    if 'username' not in session or session['username'].lower() != 'mear':
+        return redirect(url_for('feed'))
+
+    if target_username.lower() == 'mear':
+        return redirect(url_for('feed', profile=target_username))
+
+    
+    current_mods = set()
+    if os.path.exists(MODERATORS_FILE):
+        with open(MODERATORS_FILE, "r", encoding="utf-8") as f:
+            current_mods = {line.strip().lower() for line in f if line.strip()}
+
+    if target_username.lower() in current_mods:
+        current_mods.remove(target_username.lower())
+        add_notification(target_username, "⚠️ Your Moderator permissions have been revoked by @Mear.")
+        flash(f"Moderator privileges revoked from @{target_username}")
+    else:
+        current_mods.add(target_username.lower())
+        add_notification(target_username, "👑 Congratulations! @Mear has promoted you to an official Platform Moderator!")
+        flash(f"@{target_username} successfully promoted to Moderator!")
+
+    # Write clean state back to disk
+    with open(MODERATORS_FILE, "w", encoding="utf-8") as f:
+        for mod in current_mods:
+            f.write(mod + "\n")
+
+    return redirect(url_for('feed', profile=target_username))
 
 if __name__ == '__main__':
     app.run(debug=True)
