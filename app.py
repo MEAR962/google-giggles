@@ -207,15 +207,17 @@ def feed():
 
 
     notifications = []
+    
     notif_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_notifications.txt")
     if os.path.exists(notif_path):
         with open(notif_path, "r", encoding="utf-8") as f:
             notifications = [line.strip() for line in f.readlines() if line.strip()]
         notifications.reverse()
 
-         is_target_profile_mod = profile_view.lower() in get_moderators_list() if profile_view else False
+    is_target_profile_mod = profile_view.lower() in get_moderators_list() if profile_view else False
 
     pending_queue = []
+
     is_current_user_mod = session['username'].lower() in get_moderators_list()
 
 
