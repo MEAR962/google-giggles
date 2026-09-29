@@ -16,7 +16,7 @@ app.config['MAX_CONTENT_LENGTH'] = 150 * 1024 * 1024
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 USER_REGISTRY_FILE = os.path.join(os.path.dirname(__file__), "secure_users.txt")
- Admin, others load dynamically from file
+
 MODERATORS_FILE = os.path.join(os.path.dirname(__file__), "secure_mods.txt")
 
 def get_moderators_list():
