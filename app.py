@@ -61,12 +61,15 @@ def find_user(username):
                 }
     return None
 
+
 @app.route('/', methods=['GET', 'POST'])
 def feed():
+   
     if 'username' not in session:
         return redirect(url_for('login_screen'))
 
     profile_view = request.args.get('profile', '').strip()
+
     search_query = request.args.get('q', '').strip().lower()
 
     if request.method == 'POST':
@@ -178,7 +181,8 @@ def feed():
 
 
     user_bio = ""
-    bio_user = profile_view if profile_view else session['username']
+    bio_user = profile_view if profile_view else session.get('username', '')
+
 
 
     bio_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user}_bio.txt")
