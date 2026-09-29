@@ -461,13 +461,14 @@ def login_screen():
         user_record = find_user(username)
 
         if user_record and check_password_hash(user_record['password'], password):
-            if user_record['question'] and user_record['answer']:
+            if user_record.get('question') and user_record.get('answer'):
                 return redirect(url_for('two_factor_checkpoint', username=username))
             session['username'] = user_record['username']
             return redirect(url_for('feed'))
 
         flash("Invalid username or password credentials.")
     return render_template('login.html')
+
 @app.route('/2fa/<username>', methods=['GET', 'POST'])
 def two_factor_checkpoint(username):
     user_record = find_user(username)
