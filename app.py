@@ -20,7 +20,7 @@ USER_REGISTRY_FILE = os.path.join(os.path.dirname(__file__), "secure_users.txt")
 MODERATORS_FILE = os.path.join(os.path.dirname(__file__), "secure_mods.txt")
 
 def get_moderators_list():
-   
+
     mods = {'mear'}
     if os.path.exists(MODERATORS_FILE):
         with open(MODERATORS_FILE, "r", encoding="utf-8") as f:
@@ -64,7 +64,7 @@ def find_user(username):
 
 @app.route('/', methods=['GET', 'POST'])
 def feed():
-   
+
     if 'username' not in session:
         return redirect(url_for('login_screen'))
 
@@ -211,7 +211,7 @@ def feed():
 
 
     notifications = []
-    
+
     notif_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_notifications.txt")
     if os.path.exists(notif_path):
         with open(notif_path, "r", encoding="utf-8") as f:
@@ -220,20 +220,19 @@ def feed():
 
     is_target_profile_mod = profile_view.lower() in get_moderators_list() if profile_view else False
 
+
     pending_queue = []
 
     is_current_user_mod = session['username'].lower() in get_moderators_list()
 
 
-   if is_current_user_mod:
+    if is_current_user_mod:
         for f in os.listdir(app.config['UPLOAD_FOLDER']):
-
             if f.startswith('pending_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg')):
                 try:
                     creator_name = f.split('_', 2)[1]
                 except IndexError:
                     creator_name = "unknown"
-
 
                 b_name = f.rsplit('.', 1)[0]
                 cap_p = os.path.join(app.config['UPLOAD_FOLDER'], f"{b_name}_caption.txt")
@@ -242,10 +241,10 @@ def feed():
                     with open(cap_p, "r", encoding="utf-8") as cap_f:
                         cap = cap_f.read()
 
-                  pending_queue.append({"filename": f, "creator": creator_name, "caption": cap})
+                pending_queue.append({"filename": f, "creator": creator_name, "caption": cap})
 
 
-        response = make_response(render_template(
+    response = make_response(render_template(
         'feed.html',
         posts=posts_data,
         current_user=session['username'],
@@ -483,14 +482,14 @@ def two_factor_checkpoint(username):
     return render_template('2fa.html', question=user_record['question'] if user_record else "", username=username)
 @app.route('/toggle_mod/<target_username>', methods=['POST'])
 def toggle_mod(target_username):
-  
+
     if 'username' not in session or session['username'].lower() != 'mear':
         return redirect(url_for('feed'))
 
     if target_username.lower() == 'mear':
         return redirect(url_for('feed', profile=target_username))
 
-    
+
     current_mods = set()
     if os.path.exists(MODERATORS_FILE):
         with open(MODERATORS_FILE, "r", encoding="utf-8") as f:
