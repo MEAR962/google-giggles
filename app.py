@@ -354,7 +354,7 @@ def update_bio():
 
 @app.route('/delete/<filename>', methods=['POST'])
 def delete_post(filename):
-    if 'username' in session and filename.startswith(f"{session['username']}_"):
+    if 'username' in session and filename.lower().startswith(f"{session['username'].lower
         base_name = filename.rsplit('.', 1)[0]
         paths = [
             os.path.join(app.config['UPLOAD_FOLDER'], filename),
@@ -666,7 +666,7 @@ def create_chat():
         f.write(f"{session['username'].lower()}\n")
 
     flash(f"Secure Chatroom initialized!")
-    return redirect(url_for('chatroom_view', room_id=room_id))
+    return redirect(url_for('feed'))
 
 
 @app.route('/chat/<room_id>', methods=['GET', 'POST'])
