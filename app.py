@@ -683,9 +683,39 @@ def leave_chat(room_id):
     return redirect(url_for('feed'))
 
 
+@app.route('/chat_send/<room_id>', methods=['POST'])
+def chat_send(room_id):
+    if 'username' not in session: return ("Unauthorized", 401)
+    msg_text = request.form.get('message', '').strip()
+
+    if msg_text:
+        chat_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_chat.txt")
+        # ⚡ ACCESSIBLE FILE STORAGE: Saves messages permanently to disk
+        with open(chat_path, "a", encoding="utf-8") as f:
+            f.write(f"{session['username']}||{msg_text}\n")
+
+    return ("", 204)
+
+
+@app.route('/chat_messages/<room_id>')
+def chat_messages(room_id):
+    if 'username' not in session: return ("Unauthorized", 401)
+    chat_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_chat.txt")
+
+    messages = []
+    if os.path.exists(chat_path):
+        with open(chat_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if "||" in line:
+                    user, msg = line.strip().split("||", 1)
+                    messages.append({"user": user, "msg": msg})
+
+    return {"messages": messages}
+# ⚡ PLACE THIS SPECIFIC ROUTE RIGHT ABOVE @app.route('/chat_send/<room_id>')
 @app.route('/chat/<room_id>')
 def chatroom_view(room_id):
-    if 'username' not in session: return redirect(url_for('login_screen'))
+    if 'username' not in session:
+        return redirect(url_for('login_screen'))
     chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
 
     # 🔒 ACCESS CONTROL WALL: Strictly reject anyone whose name isn't inside the meta file ledger
@@ -699,42 +729,6 @@ def chatroom_view(room_id):
         return redirect(url_for('feed'))
 
     return render_template('chat.html', room_id=room_id, current_user=session['username'])
-
-
-@app.route('/chat_send/<room_id>', methods=['POST'])
-def chat_send(room_id):
-    if 'username' not in session: return ("Unauthorized", 401)
-    msg_text = request.form.get('message', '').strip()
-
-    if msg_text:
-        payload = json.dumps({"user": session['username'], "msg": msg_text})
-        # 🚀 REAL-TIME BROADCAST: Push the message to every single browser listening to this room instantly
-        if room_id in CHAT_LISTENERS:
-            for listener in CHAT_LISTENERS[room_id]:
-                listener.put(payload)
-    return ("", 204)
-
-
-@app.route('/chat_stream/<room_id>')
-def chat_stream(room_id):
-    if 'username' not in session: return ("Unauthorized", 401)
-
-    def event_generator():
-        q = queue.Queue()
-        CHAT_LISTENERS.setdefault(room_id, []).append(q)
-        try:
-            while True:
-                msg_data = q.get()  # Blocks and waits until a fresh message payload hits the thread
-                yield f"data: {msg_data}\n\n"
-        except GeneratorExit:
-            CHAT_LISTENERS[room_id].remove(q)
-
-    # Sets up a persistent connection pipe directly to the user's browser window
-    return make_response(event_generator(), {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'X-Accel-Buffering': 'no'
-    })
 
 if __name__ == '__main__':
     app.run(debug=True)
