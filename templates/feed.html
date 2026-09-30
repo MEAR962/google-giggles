@@ -393,58 +393,71 @@
 
 
 
+<script>
+    // 🔒 BULLETPROOF ROTATION FEED INTERSECTION OBSERVER PIPELINE
+    const observerOptions = {
+        root: document.querySelector('.feed-container'),
+        threshold: 0.5 // Triggers right when the card fills the center frame layout
+    };
 
-    const observerOptions = { root: document.querySelector('.feed-container'), threshold: 0.6 };
     const videoObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const video = entry.target.querySelector('video');
+            if (!video) return; // ⚡ FIXED: Safely exits if it hits a text-only card post
 
             if (entry.isIntersecting) {
-
-                if (video) {
-                    video.play().catch(err => console.log("Autoplay waiting for tap..."));
+                // 🚀 SCROLLED IN: Play video automatically
+                video.currentTime = 0; // Always start back at the beginning frame segment
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(err => {
+                        // Browser compliance fallback tracker: mute so it autoplays anyway!
+                        video.muted = true;
+                        video.play().catch(e => console.log("Playback override blocked:", e));
+                    });
                 }
             } else {
-
-                if (video) {
-                    video.pause();
-                }
+                // 🛑 SCROLLED AWAY: Pause playback and mute instantly to stop audio leaks!
+                video.pause();
+                video.muted = true;
             }
         });
     }, observerOptions);
 
-
-    let hasInteracted = false;
-    const unlockAudioAndPlay = () => {
-        hasInteracted = true;
-
-
+    // 🔊 CENTRAL AUDIO UNLOCKER: Unmutes the centered card the split second a user interacts with the app
+    const unlockAndSyncAudio = () => {
         document.querySelectorAll('.post-card').forEach(card => {
             const rect = card.getBoundingClientRect();
             const video = card.querySelector('video');
-
-
-            if (video && rect.top >= 0 && rect.top < window.innerHeight * 0.5) {
-                video.muted = false;
-                video.volume = 1.0;
-                video.play().catch(e => {});
-            } else if (video) {
-                // Force all background players to absolute silence
-                video.pause();
+            
+            if (video) {
+                // Check if this specific media card is currently occupying the center viewport slot
+                if (rect.top >= -100 && rect.top <= window.innerHeight * 0.5) {
+                    video.muted = false;
+                    video.volume = 1.0;
+                    video.play().catch(e => {});
+                } else {
+                    // Force all background elements out to absolute silent pauses
+                    video.pause();
+                    video.muted = true;
+                }
             }
         });
     };
 
+    // Bind interaction traps to clean up browser security overrides instantly
+    window.addEventListener('click', unlockAndSyncAudio);
+    window.addEventListener('touchstart', unlockAndSyncAudio);
+    
+    // Wire up continuous scrolling state updates
+    const container = document.querySelector('.feed-container');
+    if (container) {
+        container.addEventListener('scroll', unlockAndSyncAudio);
+    }
 
-    window.addEventListener('click', unlockAudioAndPlay);
-    window.addEventListener('touchstart', unlockAudioAndPlay);
-    document.querySelector('.feed-container').addEventListener('scroll', () => {
-        if (!hasInteracted) unlockAudioAndPlay();
-    });
-
+    // Attach tracking wrappers to all layout posts
     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
-
-
 </script>
+
 </body>
 </html>
