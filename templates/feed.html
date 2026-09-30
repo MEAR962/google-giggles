@@ -390,26 +390,42 @@
 
 
 
+
     const observerOptions = { root: document.querySelector('.feed-container'), threshold: 0.6 };
     const videoObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            const video = entry.target.querySelector('video');
-            if (!video) return;
+            const currentVideo = entry.target.querySelector('video');
 
             if (entry.isIntersecting) {
-                video.volume = 1.0;
 
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(err => {
-                        console.log("Audio block caught. Muting temporarily so video still plays automatically.");
-                        video.muted = true;
-                        video.play();
-                    });
+                if (currentVideo) {
+                    currentVideo.volume = 1.0;
+                    const playPromise = currentVideo.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(err => {
+
+                            currentVideo.muted = true;
+                            currentVideo.play();
+                        });
+                    }
                 }
             } else {
 
-                video.pause();
+                if (currentVideo) {
+                    currentVideo.pause();
+                }
+            }
+        });
+
+
+        document.querySelectorAll('.post-card').forEach(card => {
+            const rect = card.getBoundingClientRect();
+            const videoElement = card.querySelector('video');
+            if (videoElement) {
+
+                if (rect.top < -100 || rect.bottom > window.innerHeight + 100) {
+                    videoElement.pause();
+                }
             }
         });
     }, observerOptions);
@@ -418,10 +434,9 @@
     const unlockAudio = () => {
         document.querySelectorAll('video').forEach(video => {
             if (video.muted) {
-                video.muted = false; // Restores the audio natively without pausing the video!
+                video.muted = false;
             }
         });
-
         window.removeEventListener('click', unlockAudio);
         window.removeEventListener('touchstart', unlockAudio);
     };
