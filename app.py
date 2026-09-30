@@ -1,4 +1,7 @@
 import os
+import json
+import queue
+CHAT_LISTENERS = {}
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -284,7 +287,17 @@ def feed():
 
 
 
-    response = make_response(render_template(
+    authorized_chatrooms = []
+    for file in os.listdir(app.config['UPLOAD_FOLDER']):
+        if file.endswith('_meta.txt'):
+            c_room_id = file.replace('_meta.txt', '')
+            try:
+                with open(os.path.join(app.config['UPLOAD_FOLDER'], file), "r", encoding="utf-8") as f:
+                    if session['username'].lower() in [line.strip().lower() for line in f]:
+                        authorized_chatrooms.append(c_room_id)
+            except: pass
+
+       response = make_response(render_template(
         'feed.html',
         posts=posts_data,
         current_user=session['username'],
@@ -299,8 +312,10 @@ def feed():
         pending_queue=pending_queue,
         is_target_profile_mod=is_target_profile_mod,
         target_pfp=target_pfp,
-        target_statuses=target_statuses
+        target_statuses=target_statuses,
+        my_chats=authorized_chatrooms
     ))
+
 
 
 
@@ -520,7 +535,9 @@ def register_screen():
 
         flash("Registration complete!")
         return redirect(url_for('login_screen'))
-    return render_template('register.html')
+    return render_template('register.html')import json
+import queue
+CHAT_LISTENERS = {}  # Tracks active browser streams connecting to specific rooms
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -626,6 +643,126 @@ def post_status():
         flash('Status posted successfully!')
 
     return redirect(url_for('feed', profile=session['username']))
+@app.route('/create_chat', methods=['POST'])
+def create_chat():
+    if 'username' not in session: return redirect(url_for('login_screen'))
+
+    # Generate a completely unique Room ID using the current time
+    import time
+    room_id = f"room_{int(time.time())}"
+    chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
+
+    # Save room creator and initialize the members file ledger (creator is added instantly)
+    with open(chat_meta_path, "w", encoding="utf-8") as f:
+        f.write(f"{session['username'].lower()}\n")
+
+    flash(f"Secure Chatroom initialized! Invite your friends using ID: {room_id}")
+    return redirect(url_for('chatroom_view', room_id=room_id))
+
+
+@app.route('/invite_to_chat/<room_id>', methods=['POST'])
+def invite_to_chat(room_id):
+    if 'username' not in session: return redirect(url_for('login_screen'))
+    target_user = request.form.get('target_username', '').strip().lower()
+
+    if target_user and find_user(target_user):
+        # Drop a clickable secure invite straight into their Activity Log feed ledger
+        add_notification(target_user, f"✉️ @{session['username']} invited you to join an elite group chat! <a href='/accept_chat/{room_id}' style='color:#34a853;font-weight:bold;text-decoration:underline;'>[JOIN]</a>")
+        flash(f"Invitation cleanly transmitted over the grid to @{target_user}!")
+    else:
+        flash("Could not discover that username signature on the registry grid.")
+    return redirect(url_for('chatroom_view', room_id=room_id))
+
+
+@app.route('/accept_chat/<room_id>')
+def accept_chat(room_id):
+    if 'username' not in session: return redirect(url_for('login_screen'))
+    chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
+
+    if os.path.exists(chat_meta_path):
+        # Securely append their username signature to the access authorization file
+        with open(chat_meta_path, "a", encoding="utf-8") as f:
+            f.write(f"{session['username'].lower()}\n")
+        flash("You have successfully authorized your terminal and joined the chatroom!")
+        return redirect(url_for('chatroom_view', room_id=room_id))
+
+    flash("This chat environment has expired or does not exist.")
+    return redirect(url_for('feed'))
+
+
+@app.route('/leave_chat/<room_id>', methods=['POST'])
+def leave_chat(room_id):
+    if 'username' not in session: return redirect(url_for('login_screen'))
+    chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
+
+    if os.path.exists(chat_meta_path):
+        with open(chat_meta_path, "r", encoding="utf-8") as f:
+            members = [line.strip().lower() for line in f if line.strip()]
+        if session['username'].lower() in members:
+            members.remove(session['username'].lower())
+        # Write remaining members back or kill room file entirely if empty
+        if members:
+            with open(chat_meta_path, "w", encoding="utf-8") as f:
+                for m in members: f.write(f"{m}\n")
+        else:
+            try: os.remove(chat_meta_path)
+            except: pass
+
+    flash("You left the chatroom panel securely.")
+    return redirect(url_for('feed'))
+
+
+@app.route('/chat/<room_id>')
+def chatroom_view(room_id):
+    if 'username' not in session: return redirect(url_for('login_screen'))
+    chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
+
+    # 🔒 ACCESS CONTROL WALL: Strictly reject anyone whose name isn't inside the meta file ledger
+    authorized = False
+    if os.path.exists(chat_meta_path):
+        with open(chat_meta_path, "r", encoding="utf-8") as f:
+            authorized = session['username'].lower() in [line.strip().lower() for line in f]
+
+    if not authorized:
+        flash("⛔ ACCESS DENIED: You have not received an authorization invitation for this coordinate room.")
+        return redirect(url_for('feed'))
+
+    return render_template('chat.html', room_id=room_id, current_user=session['username'])
+
+
+@app.route('/chat_send/<room_id>', methods=['POST'])
+def chat_send(room_id):
+    if 'username' not in session: return ("Unauthorized", 401)
+    msg_text = request.form.get('message', '').strip()
+
+    if msg_text:
+        payload = json.dumps({"user": session['username'], "msg": msg_text})
+
+        if room_id in CHAT_LISTENERS:
+            for listener in CHAT_LISTENERS[room_id]:
+                listener.put(payload)
+    return ("", 204)
+
+
+@app.route('/chat_stream/<room_id>')
+def chat_stream(room_id):
+    if 'username' not in session: return ("Unauthorized", 401)
+
+    def event_generator():
+        q = queue.Queue()
+        CHAT_LISTENERS.setdefault(room_id, []).append(q)
+        try:
+            while True:
+                msg_data = q.get()  
+                yield f"data: {msg_data}\n\n"
+        except GeneratorExit:
+            CHAT_LISTENERS[room_id].remove(q)
+
+    return make_response(event_generator(), {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no'
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
