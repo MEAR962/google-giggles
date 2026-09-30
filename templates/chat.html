@@ -5,7 +5,7 @@
     
     let lastMessageCount = 0;
 
-    // 🚀 ULTRA-LIGHT POLLING DISPATCHER: Pulls messages from the server ledger cleanly without freezing threads
+    // 🚀 ULTRA-LIGHT POLLING DISPATCHER: Pulls messages from the server ledger cleanly
     async function fetchChatMessages() {
         try {
             const response = await fetch("/chat_messages/{{ room_id }}");
@@ -57,4 +57,5 @@
     // Run initial sync on load, then loop back safely every 1.5 seconds 
     fetchChatMessages();
     setInterval(fetchChatMessages, 1500);
+
 </script>
