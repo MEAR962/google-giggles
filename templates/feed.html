@@ -407,17 +407,27 @@
                 const htmlText = await response.text();
 
                 // Swaps out ONLY the center scroll container to prevent page resets
+// ⚡ MANUALLY EDIT IT TO MATCH THIS (Updates BOTH Center Feed and Sidebar Statuses Silently!):
                 const parser = new DOMParser();
                 const newDoc = parser.parseFromString(htmlText, 'text/html');
+
+                // 1. Swap out the central scrolling feed grid cleanly
                 const newFeed = newDoc.querySelector('.feed-container');
                 const currentFeed = document.querySelector('.feed-container');
-
                 if (newFeed && currentFeed) {
                     currentFeed.innerHTML = newFeed.innerHTML;
-
-                    // Re-bind the observers instantly to hook any new autoplay items
-                    document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
                 }
+
+                // 2. Swap out the sidebar profile picture header card (including text thoughts!) safely
+                const newProfileCard = newDoc.querySelector('.profile-header-card');
+                const currentProfileCard = document.querySelector('.profile-header-card');
+                if (newProfileCard && currentProfileCard) {
+                    currentProfileCard.innerHTML = newProfileCard.innerHTML;
+                }
+
+                // Re-bind the video scroll observer instantly to hook any newly appeared video elements
+                document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
+
             }
 
             // 2. LIVE SIDEBAR NOTIFICATION PIPELINE
