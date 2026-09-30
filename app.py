@@ -142,20 +142,6 @@ def feed():
 
 
     posts_data = []
-    status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_status_posts.txt")
-    if os.path.exists(status_path):
-        with open(status_path, "r", encoding="utf-8") as f:
-            for line in f:
-                if "||" in line:
-                    ts, content = line.strip().split("||", 1)
-                    posts_data.append({
-                        "filename": f"text_status_{ts}.txt",
-                        "likes": 0,
-                        "comments": [],
-                        "creator": bio_user,
-                        "caption": content,
-                        "is_text_only": True
-                    })
     for filename in media_files:
         if "_" not in filename:
             continue
@@ -204,11 +190,7 @@ def feed():
     user_bio = ""
     bio_user = profile_view if profile_view else session.get('username', '')
 
-
-
     bio_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user}_bio.txt")
-
-
     if not os.path.exists(bio_path):
         for f in os.listdir(app.config['UPLOAD_FOLDER']):
             if f.lower() == f"{bio_user.lower()}_bio.txt":
@@ -218,6 +200,21 @@ def feed():
     if os.path.exists(bio_path):
         with open(bio_path, "r", encoding="utf-8") as f:
             user_bio = f.read()
+
+    status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_status_posts.txt")
+    if os.path.exists(status_path):
+        with open(status_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if "||" in line:
+                    ts, content = line.strip().split("||", 1)
+                    posts_data.append({
+                        "filename": f"text_status_{ts}.txt",
+                        "likes": 0,
+                        "comments": [],
+                        "creator": bio_user,
+                        "caption": content,
+                        "is_text_only": True
+                    })
 
     current_following = get_following_list(session['username'])
     is_following_profile = profile_view.lower() in current_following if profile_view else False
