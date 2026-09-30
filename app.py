@@ -39,21 +39,12 @@ def get_moderators_list():
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-# ⚡ CHANGE IT TO THIS (Fixes case-sensitive folder path mismatches):
+# ⚡ REPLACE YOUR RECENT CASE-SAFE EXPERIMENT WITH THIS CLEAN ENGINE:
 def add_notification(target_user, alert_text):
     if not target_user:
         return
-
-    # Default to lowercase name blueprint
-    filename = f"{target_user.lower()}_notifications.txt"
-
-    # 🔒 CASE-SAFE SCANNER: Look through active disk folder files to find their exact spelling
-    if os.path.exists(app.config['UPLOAD_FOLDER']):
-        for f in os.listdir(app.config['UPLOAD_FOLDER']):
-            if f.lower() == f"{target_user.lower()}_notifications.txt":
-                filename = f
-                break
-
+    # 🔒 BULLETPROOF: Forces every single alert ledger file to save as lowercase
+    filename = f"{target_user.strip().lower()}_notifications.txt"
     notif_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     with open(notif_path, "a", encoding="utf-8") as f:
         f.write(alert_text + "\n")
@@ -240,6 +231,7 @@ def feed():
 
     notifications = []
     notif_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_notifications.txt")
+
     if os.path.exists(notif_path):
         with open(notif_path, "r", encoding="utf-8") as f:
             notifications = [line.strip() for line in f.readlines() if line.strip()]
