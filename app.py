@@ -270,7 +270,6 @@ def feed():
                 pending_queue.append({"filename": f, "creator": creator_name, "caption": cap})
 
 
-# ⚡ CHANGE IT TO THIS (Added the missing tracking commas):
     response = make_response(render_template(
         'feed.html',
         posts=posts_data,
