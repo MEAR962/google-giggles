@@ -632,7 +632,7 @@ def create_chat():
     return redirect(url_for('chatroom_view', room_id=room_id))
 
 
-@app.route('/chat/<room_id>')
+@app.route('/chat/<room_id>', methods=['GET', 'POST'])
 def chatroom_view(room_id):
     if 'username' not in session: return redirect(url_for('login_screen'))
 
