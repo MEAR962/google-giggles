@@ -718,24 +718,6 @@ def chat_messages(room_id):
                     messages.append({"user": user, "msg": msg})
 
     return {"messages": messages}
-# ⚡ PLACE THIS SPECIFIC ROUTE RIGHT ABOVE @app.route('/chat_send/<room_id>')
-@app.route('/chat/<room_id>')
-def chatroom_view(room_id):
-    if 'username' not in session:
-        return redirect(url_for('login_screen'))
-    chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
-
-    # 🔒 ACCESS CONTROL WALL: Strictly reject anyone whose name isn't inside the meta file ledger
-    authorized = False
-    if os.path.exists(chat_meta_path):
-        with open(chat_meta_path, "r", encoding="utf-8") as f:
-            authorized = session['username'].lower() in [line.strip().lower() for line in f]
-
-    if not authorized:
-        flash("⛔ ACCESS DENIED: You have not received an authorization invitation for this coordinate room.")
-        return redirect(url_for('feed'))
-
-    return render_template('chat.html', room_id=room_id, current_user=session['username'])
 
 if __name__ == '__main__':
     app.run(debug=True)
