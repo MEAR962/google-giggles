@@ -229,80 +229,187 @@
     <a href="/logout" style="color: #ff6b6b; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: auto; padding: 10px 0;"> Log Out</a>
 </div>
 
-<div class="feed-container">
-    {% if not posts %}
-    <div class="no-posts">
-        <h3>No clips here!</h3>
-        <p>Be the first to upload an highlight track to this user's registry grid wall above!</p>
-        {% if profile_view %} <a href="/" class="nav-btn" style="display:inline-block; font-size:13px; padding:6px 15px;">Back to Main Feed</a> {% endif %}
-    </div>
-    {% endif %}
+<div class="feed-container" {% if profile_view %}style="scroll-snap-type: none; background: #000; padding: 20px; overflow-y: auto; box-sizing: border-box;"{% endif %}>
 
-    {% for post in posts %}
-    <div class="post-card">
-        <div class="media-wrapper">
+    {% if profile_view %}
+        <!-- 🎸 RETRO SPACEHEY CARD GRID PROFILE SYSTEM LAYER -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto 30px auto; width: 100%; box-sizing: border-box;">
 
+            <!-- BOX 1: AVATAR DISPLAY FRAME -->
+            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                {% if target_pfp %}
+                    <img src="{{ url_for('static', filename='uploads/' + target_pfp) }}" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 3px solid #1a73e8; background: #000;">
+                {% else %}
+                    <div style="width: 140px; height: 140px; border-radius: 50%; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 48px; border: 2px dashed #444;">👤</div>
+                {% endif %}
+                <h2 style="color: #1a73e8; margin: 15px 0 0 0; font-family: monospace; font-size: 22px;">@{{ profile_view }}</h2>
+            </div>
 
+            <!-- BOX 2: ACCOUNT DETAILED BIOGRAPHY DESCRIPTION WINDOW -->
+            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left; display: flex; flex-direction: column;">
+                <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Biography</h3>
+                <p style="font-size: 14px; color: #ddd; margin: 0; line-height: 1.5; font-style: italic; overflow-y: auto; flex: 1;">
+                    {{ user_bio if user_bio else "This individual hasn't declared their baseline terminal description log parameters yet." }}
+                </p>
+            </div>
 
-            <div class="video-container">
-                <a href="/?profile={{ post.creator }}" class="user-tag">@{{ post.creator }}</a>
+            <!-- BOX 3: CURRENT MOOD & STATUS TICKER JOURNAL -->
+            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left;">
+                <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Current Mood & Blabs</h3>
+                <div style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                    {% if not target_statuses %}
+                        <span style="color: #555; font-style: italic; font-size: 13px;">No broadcasted thoughts floating on the active ledger grids...</span>
+                    {% endif %}
+                    {% for status in target_statuses %}
+                        <div style="background: #0a0a0a; padding: 10px; border-radius: 6px; border-left: 3px solid #34a853; font-size: 13px; color: #eee; position: relative;">
+                            {{ status.content }}
+                            {% if profile_view.lower() == current_user.lower() %}
+                            <form action="/delete/text_status_{{ status.timestamp }}.txt" method="POST" style="position: absolute; right: 8px; top: 8px; margin: 0;">
+                                <button type="submit" style="background: none; border: none; color: #ff6b6b; font-size: 11px; cursor: pointer; padding: 0;">[x]</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
 
-                {% if post.is_text_only %}
-                    <div style="padding: 40px 20px; font-size: 24px; font-weight: bold; text-align: center; color: white; width: 100%; word-wrap: break-word; font-family: monospace;">
-                        "{{ post.caption }}"
-                    </div>
-
-                {% elif post.filename.endswith('.mp4') %}
-                    <video class="media-content" controls loop muted>
-                        <source src="{{ url_for('static', filename='uploads/' + post.filename) }}" type="video/mp4">
-                    </video>
-
-                {% elif post.filename.endswith('.png') or post.filename.endswith('.jpg') or post.filename.endswith('.jpeg') or post.filename.endswith('.gif') %}
-                    <img class="media-content" src="{{ url_for('static', filename='uploads/' + post.filename) }}" alt="Google Giggles Meme Image">
+            <!-- BOX 4: PEOPLE THE PERSON FOLLOWS (CONNECTIONS DECK) -->
+            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left;">
+                <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Elite Connections</h3>
+                <div style="font-size: 13px; color: #aaa; margin-bottom: 8px; font-weight: bold;">Followers Matrix Total: <span style="color: #34a853;">{{ follower_count }}</span></div>
+                <!-- Action button to toggle connections layers natively -->
+                {% if profile_view.lower() != current_user.lower() %}
+                <form action="/follow/{{ profile_view }}" method="POST" style="margin-bottom: 10px;">
+                    <button type="submit" class="submit-btn" style="background: {% if is_following_profile %}#ea4335{% else %}#1a73e8{% endif %}; padding: 6px; font-size: 12px; width: auto; border-radius: 4px;">
+                        {% if is_following_profile %}⚠️ Sever Connection (Unfollow){% else %}⚡ Initialize Link (Follow){% endif %}
+                    </button>
+                </form>
                 {% endif %}
             </div>
 
-            {% if not post.is_text_only and post.caption %}
-            <div style="background: rgba(0,0,0,0.4); padding: 10px; margin-top: 10px; border-radius: 6px; font-size: 14px; border-left: 3px solid #1a73e8; word-wrap: break-word;">
-                {{ post.caption }}
-            </div>
-            {% endif %}
-
-
-
-
-            <div class="engagement-container">
-                <div class="action-row">
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <form action="/like/{{ post.filename }}" method="POST">
-                            <button type="submit" class="like-btn"> Like</button>
-                        </form>
-                        <span><strong>{{ post.likes }}</strong> likes</span>
-                    </div>
-                    {% if post.creator.lower() == current_user.lower() %}
-                    <form action="/delete/{{ post.filename }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this highlight?');">
-                        <button type="submit" class="delete-btn"> Delete</button>
-                    </form>
-                    {% endif %}
+            <!-- BOX 5: CORE PROFILE INTERESTS MATRIX -->
+            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left;">
+                <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Interests</h3>
+                <div style="font-size: 13px; line-height: 1.6; color: #ccc;">
+                    <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Music:</strong> Memes, Bass drops, Video game soundlogs</p>
+                    <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Movies:</strong> Internet humor collections, Clips</p>
+                    <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Heroes:</strong> @Mear (Chief Executive Admin)</p>
                 </div>
-
-                <div class="comment-section">
-                    {% if not post.comments %}
-                    <p style="color: #666; margin: 0; font-style: italic;">No comments yet... Be the first!</p>
-                    {% endif %}
-                    {% for comment in post.comments %}
-                    <div class="comment-item"> {{ comment }}</div>
-                    {% endfor %}
-                </div>
-
-                <form class="comment-form" action="/comment/{{ post.filename }}" method="POST">
-                    <input type="text" name="comment" class="comment-input" placeholder="Add a comment..." required>
-                    <button type="submit" class="comment-submit">Post</button>
-                </form>
             </div>
+
+            <!-- BOX 6: MISSION OBJECTIVES & CONTACT GRID MAP -->
+            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left;">
+                <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Who I Want to Meet</h3>
+                <p style="font-size: 13px; color: #bbb; margin: 4px 0; line-height: 1.5;">
+                    "Looking to synchronize coordinate logs with fellow high-tier creators across the web. Send me a secure invite link to a chatroom channel!"
+                </p>
+            </div>
+
         </div>
-    </div>
-    {% endfor %}
+
+        <!-- LEFT-TO-RIGHT GRID OF CLIPS AND IMAGES DECK -->
+        <h3 style="color: #1a73e8; text-align: left; max-width: 900px; margin: 20px auto 10px auto; font-family: monospace; font-size: 18px; text-transform: uppercase; border-bottom: 2px solid #1a73e8; padding-bottom: 6px;">📁 Uploaded Highlight Post Streams</h3>
+
+        {% if not posts %}
+            <div style="color: #666; font-style: italic; text-align: center; margin-top: 40px; font-size: 15px;">No uploaded media assets registered to this user account profile.</div>
+        {% else %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box; padding-bottom: 50px;">
+                {% for post in posts %}
+                    {% if not post.is_text_only %}
+                    <div style="background: #111; border: 1px solid #2d2d2d; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; justify-content: space-between; box-sizing: border-box;">
+                        <div style="width: 100%; height: 180px; background: #000; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative;">
+                            {% if post.filename.endswith('.mp4') %}
+                                <video src="{{ url_for('static', filename='uploads/' + post.filename) }}" controls loop muted style="width: 100%; height: 100%; object-fit: contain;"></video>
+                            {% else %}
+                                <img src="{{ url_for('static', filename='uploads/' + post.filename) }}" style="width: 100%; height: 100%; object-fit: contain;">
+                            {% endif %}
+                        </div>
+
+                        {% if post.caption %}
+                            <div style="font-size: 12px; color: #ccc; font-style: italic; background: #1a1a1a; padding: 6px; border-radius: 4px; word-wrap: break-word;">"{{ post.caption }}"</div>
+                        {% endif %}
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #222; padding-top: 6px; font-size: 12px;">
+                            <span>❤️ <strong>{{ post.likes }}</strong> likes</span>
+                            {% if post.creator.lower() == current_user.lower() %}
+                            <form action="/delete/{{ post.filename }}" method="POST" style="margin:0;" onsubmit="return confirm('Delete this highlight asset?');">
+                                <button type="submit" style="background:none; border:none; color:#ff6b6b; font-weight:bold; cursor:pointer; font-size:11px;">[Delete]</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+    {% else %}
+        <!-- 🎬 STANDARD FULL-SCREEN HOME FEED VERTICAL SCROLLER TIMELINE -->
+        {% if not posts %}
+            <div class="no-posts">
+                <h3>No clips here!</h3>
+                <p>Be the first to upload a highlight track to this platform loop stream!</p>
+            </div>
+        {% endif %}
+
+        {% for post in posts %}
+            <div class="post-card">
+                <div class="media-wrapper">
+                    <div class="video-container">
+                        <a href="/?profile={{ post.creator }}" class="user-tag">@{{ post.creator }}</a>
+
+                        {% if post.is_text_only %}
+                            <div style="padding: 40px 20px; font-size: 24px; font-weight: bold; text-align: center; color: white; width: 100%; word-wrap: break-word; font-family: monospace;">
+                                "{{ post.caption }}"
+                            </div>
+                        {% elif post.filename.endswith('.mp4') %}
+                            <video class="media-content" controls loop muted>
+                                <source src="{{ url_for('static', filename='uploads/' + post.filename) }}" type="video/mp4">
+                            </video>
+                        {% elif post.filename.endswith('.png') or post.filename.endswith('.jpg') or post.filename.endswith('.jpeg') or post.filename.endswith('.gif') %}
+                            <img class="media-content" src="{{ url_for('static', filename='uploads/' + post.filename) }}" alt="Google Giggles Meme Image">
+                        {% endif %}
+                    </div>
+
+                    {% if not post.is_text_only and post.caption %}
+                    <div style="background: rgba(0,0,0,0.4); padding: 10px; margin-top: 10px; border-radius: 6px; font-size: 14px; border-left: 3px solid #1a73e8; word-wrap: break-word;">
+                        {{ post.caption }}
+                    </div>
+                    {% endif %}
+
+                    <div class="engagement-container">
+                        <div class="action-row">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <form action="/like/{{ post.filename }}" method="POST">
+                                    <button type="submit" class="like-btn"> Like</button>
+                                </form>
+                                <span><strong>{{ post.likes }}</strong> likes</span>
+                            </div>
+                            {% if post.creator.lower() == current_user.lower() %}
+                            <form action="/delete/{{ post.filename }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this highlight?');">
+                                <button type="submit" class="delete-btn"> Delete</button>
+                            </form>
+                            {% endif %}
+                        </div>
+
+                        <div class="comment-section">
+                            {% if not post.comments %}
+                            <p style="color: #666; margin: 0; font-style: italic;">No comments yet... Be the first!</p>
+                            {% endif %}
+                            {% for comment in post.comments %}
+                            <div class="comment-item"> {{ comment }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <form class="comment-form" action="/comment/{{ post.filename }}" method="POST">
+                            <input type="text" name="comment" class="comment-input" placeholder="Add a comment..." required>
+                            <button type="submit" class="comment-submit">Post</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
 </div>
 
 <script>
@@ -376,13 +483,15 @@
     window.addEventListener('touchstart', syncFeedAudio);
 
     const feedWindow = document.querySelector('.feed-container');
+// ⚡ MANUALLY EDIT IT TO LOOK EXACTLY LIKE THIS:
     if (feedWindow) {
         feedWindow.addEventListener('scroll', syncFeedAudio);
     }
 
-
     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
 
+    // 🚀 SILENT REAL-TIME MULTI-FEED INTERSECTION PIPELINE
+    let currentTotalPostCount = -1;
 
 
 
@@ -407,7 +516,6 @@
                 const htmlText = await response.text();
 
                 // Swaps out ONLY the center scroll container to prevent page resets
-// ⚡ MANUALLY EDIT IT TO MATCH THIS (Updates BOTH Center Feed and Sidebar Statuses Silently!):
                 const parser = new DOMParser();
                 const newDoc = parser.parseFromString(htmlText, 'text/html');
 
