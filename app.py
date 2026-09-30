@@ -21,12 +21,12 @@ MODERATORS_FILE = os.path.join(os.path.dirname(__file__), "secure_mods.txt")
 
 
 def get_moderators_list():
- 
+
     mods = {'mear'}
     if os.path.exists(MODERATORS_FILE):
         with open(MODERATORS_FILE, "r", encoding="utf-8") as f:
             for line in f:
-              
+
                 cleaned_line = line.strip().lower()
                 if cleaned_line:
                     mods.add(cleaned_line)
@@ -135,7 +135,10 @@ def feed():
     all_files = os.listdir(app.config['UPLOAD_FOLDER'])
 
     media_files = [f for f in all_files if not f.startswith('raw_') and not f.startswith('pending_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg'))]
-    media_files.sort(key=lambda x: os.path.getmtime(os.path.join(app.config['UPLOAD_FOLDER'], x)), reverse=True)
+
+    import random
+    random.shuffle(media_files)
+
 
 
     posts_data = []
@@ -311,21 +314,47 @@ def logout_action():
 
 @app.route('/like/<filename>', methods=['POST'])
 def like_post(filename):
+    if 'username' not in session:
+        return redirect(url_for('login_screen'))
+
     base_name = filename.rsplit('.', 1)[0]
-    p = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_likes.txt")
+    likes_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_likes.txt")
+    liked_users_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_liked_users.txt")
+
+
+    already_liked = []
+    if os.path.exists(liked_users_path):
+        with open(liked_users_path, "r", encoding="utf-8") as f:
+            already_liked = [line.strip().lower() for line in f.readlines() if line.strip()]
+
+    current_user_lower = session['username'].lower()
+
+
+    if current_user_lower in already_liked:
+        flash("You have already verified this meme as funny!")
+        return redirect(url_for('feed'))
+
+
     c = 0
-    if os.path.exists(p):
-        with open(p, "r", encoding="utf-8") as f:
+    if os.path.exists(likes_path):
+        with open(likes_path, "r", encoding="utf-8") as f:
             try: c = int(f.read().strip())
             except ValueError: c = 0
-    with open(p, "w", encoding="utf-8") as f:
+
+
+    with open(likes_path, "w", encoding="utf-8") as f:
         f.write(str(c + 1))
+
+
+    with open(liked_users_path, "a", encoding="utf-8") as f:
+        f.write(current_user_lower + "\n")
 
     creator_name = filename.split("_", 1)[0] if "_" in filename else None
     if creator_name and creator_name.lower() != session['username'].lower():
         add_notification(creator_name, f"❤️ @{session['username']} liked your clip ({base_name})!")
 
     return redirect(url_for('feed'))
+
 
 @app.route('/comment/<filename>', methods=['POST'])
 def add_comment(filename):
