@@ -651,6 +651,21 @@ def chatroom_view(room_id):
     return render_template('chat.html', room_id=room_id, current_user=session['username'])
 
 
+@app.route('/invite_to_chat/<room_id>', methods=['POST'])
+def invite_to_chat(room_id):
+    if 'username' not in session:
+        return redirect(url_for('login_screen'))
+
+    target_user = request.form.get('target_username', '').strip().lower()
+
+    if target_user and find_user(target_user):
+        # 🚀 TRANSMIT INVITE: Drops a clean, unescaped clickable hyperlink into their dashboard timeline metrics
+        add_notification(target_user, f"✉️ @{session['username']} invited you to join an elite group chat! <a href='/accept_chat/{room_id}' style='color:#34a853;font-weight:bold;text-decoration:underline;'>[JOIN]</a>")
+        flash(f"Invitation cleanly transmitted over the grid to @{target_user}!")
+    else:
+        flash("Could not discover that username signature on the registry grid.")
+
+    return redirect(url_for('chatroom_view', room_id=room_id))
 
 @app.route('/accept_chat/<room_id>')
 def accept_chat(room_id):
