@@ -240,14 +240,7 @@
             </div>
 
 
-                <video class="media-content" controls loop>
-                    <source src="{{ url_for('static', filename='uploads/' + post.filename) }}" type="video/mp4">
-                </video>
 
-                {% elif post.filename.endswith('.png') or post.filename.endswith('.jpg') or post.filename.endswith('.jpeg') or post.filename.endswith('.gif') %}
-                <img class="media-content" src="{{ url_for('static', filename='uploads/' + post.filename) }}" alt="Google Giggles Meme Image">
-                {% endif %}
-            </div>
 
             {% if post.caption %}
             <div style="background: rgba(0,0,0,0.4); padding: 10px; margin-top: 10px; border-radius: 6px; font-size: 14px; border-left: 3px solid #1a73e8; word-wrap: break-word;">
