@@ -142,6 +142,20 @@ def feed():
 
 
     posts_data = []
+    status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_status_posts.txt")
+    if os.path.exists(status_path):
+        with open(status_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if "||" in line:
+                    ts, content = line.strip().split("||", 1)
+                    posts_data.append({
+                        "filename": f"text_status_{ts}.txt",
+                        "likes": 0,
+                        "comments": [],
+                        "creator": bio_user,
+                        "caption": content,
+                        "is_text_only": True
+                    })
     for filename in media_files:
         if "_" not in filename:
             continue
