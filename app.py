@@ -39,12 +39,25 @@ def get_moderators_list():
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# ⚡ CHANGE IT TO THIS (Fixes case-sensitive folder path mismatches):
 def add_notification(target_user, alert_text):
     if not target_user:
         return
-    notif_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{target_user.lower()}_notifications.txt")
+
+    # Default to lowercase name blueprint
+    filename = f"{target_user.lower()}_notifications.txt"
+
+    # 🔒 CASE-SAFE SCANNER: Look through active disk folder files to find their exact spelling
+    if os.path.exists(app.config['UPLOAD_FOLDER']):
+        for f in os.listdir(app.config['UPLOAD_FOLDER']):
+            if f.lower() == f"{target_user.lower()}_notifications.txt":
+                filename = f
+                break
+
+    notif_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     with open(notif_path, "a", encoding="utf-8") as f:
         f.write(alert_text + "\n")
+
 
 def get_following_list(username):
     following_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{username.lower()}_following.txt")
