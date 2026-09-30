@@ -14,7 +14,7 @@
         .upload-card { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-top: 10px; }
         .upload-card h3 { margin-top: 0; }
         .alert { color: #ff6b6b; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
-        #editor-container { display: none; background: #111; padding: 15px; border-radius: 6px; margin-top: 10px; text-align: center; }
+        .editor-container { display: none; background: #111; padding: 15px; border-radius: 6px; margin-top: 10px; text-align: center; }
         .range-input { width: 100%; background: #333; color: white; border: 1px solid #444; padding: 8px; border-radius: 4px; box-sizing: border-box; font-size: 16px; margin-top: 5px; text-align: center; }
         .editor-btn { background: #1a73e8; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 15px; }
         .submit-btn { background: #34a853; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -54,7 +54,7 @@
         {% endif %}
     </form>
 
-    
+
     {% if search_query and matched_accounts %}
     <div style="background: #252525; padding: 12px; border-radius: 6px; border: 1px solid #1a73e8; text-align: left; margin-bottom: 10px;">
         <h4 style="margin: 0 0 8px 0; color: #1a73e8; font-size: 13px; text-transform: uppercase;"> Matched Creators:</h4>
@@ -79,7 +79,7 @@
          Followers: <strong>{{ follower_count }}</strong>
     </p>
 
-       
+
     {% if current_user.lower() == 'mear' and profile_view and profile_view.lower() != 'mear' %}
     <form action="/toggle_mod/{{ profile_view }}" method="POST" style="margin-top: 10px; margin-bottom: 10px;">
         <button type="submit" class="nav-btn" style="width:100%; border-radius:4px; font-size:12px; padding:6px; cursor:pointer; font-weight: bold; background: {% if is_target_profile_mod %}#ea4335{% else %}#34a853{% endif %}; border:none; color: white;">
@@ -151,7 +151,7 @@
                 {% if item.caption %}<p style="margin: 3px 0; color: #aaa; font-style: italic;">"{{ item.caption }}"</p>{% endif %}
 
                 {% if item.filename.endswith('.mp4') %}
-                <video src="{{ url_for('static', filename='uploads/' + item.filename) }}" controls muted style="max-width: 100%; max-height: 80px; margin-top: 4px; border-radius: 3px; background: #000;"></video>
+                <video src="{{ url_for('static', filename='uploads/' + item.filename) }}" controls style="max-width: 100%; max-height: 80px; margin-top: 4px; border-radius: 3px; background: #000;"></video>
                 {% else %}
                 <img src="{{ url_for('static', filename='uploads/' + item.filename) }}" style="max-width: 100%; max-height: 80px; object-fit: contain; margin-top: 4px; border-radius: 3px;">
                 {% endif %}
@@ -186,13 +186,15 @@
     {% for post in posts %}
     <div class="post-card">
         <div class="media-wrapper">
+
             <div class="video-container">
                 <a href="/?profile={{ post.creator }}" class="user-tag">@{{ post.creator }}</a>
 
                 {% if post.filename.endswith('.mp4') %}
-                <video class="media-content" controls muted loop>
+                <video class="media-content" controls loop>
                     <source src="{{ url_for('static', filename='uploads/' + post.filename) }}" type="video/mp4">
                 </video>
+
                 {% elif post.filename.endswith('.png') or post.filename.endswith('.jpg') or post.filename.endswith('.jpeg') or post.filename.endswith('.gif') %}
                 <img class="media-content" src="{{ url_for('static', filename='uploads/' + post.filename) }}" alt="Google Giggles Meme Image">
                 {% endif %}
@@ -269,7 +271,7 @@
                 editorContainer.style.display = 'block';
             } else {
                 isVideo = false;
-                isTrimLocked = true; 
+                isTrimLocked = true;
                 editorContainer.style.display = 'none';
                 submitBtn.disabled = false;
             }
@@ -291,7 +293,7 @@
             uploadForm.addEventListener('submit', async function(e) {
             if (!isVideo) return;
 
-            e.preventDefault(); 
+            e.preventDefault();
 
             if (!isTrimLocked) {
                 alert("Please click 'Lock In Cut Specs' before posting your clip!");
@@ -305,7 +307,7 @@
 
             let duration = parseFloat(document.getElementById('clip-duration').value);
             if (isNaN(duration) || duration <= 0 || duration > 60) {
-                duration = 35; 
+                duration = 35;
             }
 
             try {
@@ -347,13 +349,22 @@
         });
 
 
+        
     const observerOptions = { root: document.querySelector('.feed-container'), threshold: 0.6 };
     const videoObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const video = entry.target.querySelector('video');
             if (!video) return;
             if (entry.isIntersecting) {
-                video.play().catch(err => console.log("Autoplay blocked: ", err));
+                
+                video.muted = false;
+                video.volume = 1.0;
+                video.play().catch(err => {
+                    console.log("Autoplay with audio blocked by browser settings: ", err);
+
+                    video.muted = true;
+                    video.play();
+                });
             } else {
                 video.pause();
             }
@@ -361,6 +372,7 @@
     }, observerOptions);
 
     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
+
 </script>
 </body>
 </html>
