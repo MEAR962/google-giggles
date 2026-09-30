@@ -261,6 +261,7 @@ def feed():
                 except IndexError:
                     creator_name = "unknown"
 
+
                 b_name = f.rsplit('.', 1)[0]
                 cap_p = os.path.join(app.config['UPLOAD_FOLDER'], f"{b_name}_caption.txt")
                 cap = ""
