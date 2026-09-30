@@ -19,15 +19,19 @@ USER_REGISTRY_FILE = os.path.join(os.path.dirname(__file__), "secure_users.txt")
 
 MODERATORS_FILE = os.path.join(os.path.dirname(__file__), "secure_mods.txt")
 
-def get_moderators_list():
 
+def get_moderators_list():
+ 
     mods = {'mear'}
     if os.path.exists(MODERATORS_FILE):
         with open(MODERATORS_FILE, "r", encoding="utf-8") as f:
             for line in f:
-                if line.strip():
-                    mods.add(line.strip().lower())
+              
+                cleaned_line = line.strip().lower()
+                if cleaned_line:
+                    mods.add(cleaned_line)
     return mods
+
 
 
 def allowed_file(filename):
