@@ -619,31 +619,37 @@ def post_status():
 def create_chat():
     if 'username' not in session: return redirect(url_for('login_screen'))
 
-    # Generate a completely unique Room ID using the current time
     import time
     room_id = f"room_{int(time.time())}"
+
+    # ⚡ FIXED: Forces the path to save inside static/uploads/
     chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
 
-    # Save room creator and initialize the members file ledger (creator is added instantly)
     with open(chat_meta_path, "w", encoding="utf-8") as f:
         f.write(f"{session['username'].lower()}\n")
 
-    flash(f"Secure Chatroom initialized! Invite your friends using ID: {room_id}")
+    flash(f"Secure Chatroom initialized!")
     return redirect(url_for('chatroom_view', room_id=room_id))
 
 
-@app.route('/invite_to_chat/<room_id>', methods=['POST'])
-def invite_to_chat(room_id):
+@app.route('/chat/<room_id>')
+def chatroom_view(room_id):
     if 'username' not in session: return redirect(url_for('login_screen'))
-    target_user = request.form.get('target_username', '').strip().lower()
 
-    if target_user and find_user(target_user):
-        # Drop a clickable secure invite straight into their Activity Log feed ledger
-        add_notification(target_user, f"✉️ @{session['username']} invited you to join an elite group chat! <a href='/accept_chat/{room_id}' style='color:#34a853;font-weight:bold;text-decoration:underline;'>[JOIN]</a>")
-        flash(f"Invitation cleanly transmitted over the grid to @{target_user}!")
-    else:
-        flash("Could not discover that username signature on the registry grid.")
-    return redirect(url_for('chatroom_view', room_id=room_id))
+    # ⚡ FIXED: Points safely to static/uploads/
+    chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
+
+    authorized = False
+    if os.path.exists(chat_meta_path):
+        with open(chat_meta_path, "r", encoding="utf-8") as f:
+            authorized = session['username'].lower() in [line.strip().lower() for line in f]
+
+    if not authorized:
+        flash("⛔ ACCESS DENIED!")
+        return redirect(url_for('feed'))
+
+    return render_template('chat.html', room_id=room_id, current_user=session['username'])
+
 
 
 @app.route('/accept_chat/<room_id>')
