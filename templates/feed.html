@@ -397,21 +397,38 @@
         entries.forEach(entry => {
             const video = entry.target.querySelector('video');
             if (!video) return;
+
             if (entry.isIntersecting) {
-
-                video.muted = false;
                 video.volume = 1.0;
-                video.play().catch(err => {
-                    console.log("Autoplay with audio blocked by browser settings: ", err);
 
-                    video.muted = true;
-                    video.play();
-                });
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(err => {
+                        console.log("Audio block caught. Muting temporarily so video still plays automatically.");
+                        video.muted = true;
+                        video.play();
+                    });
+                }
             } else {
+
                 video.pause();
             }
         });
     }, observerOptions);
+
+
+    const unlockAudio = () => {
+        document.querySelectorAll('video').forEach(video => {
+            if (video.muted) {
+                video.muted = false; // Restores the audio natively without pausing the video!
+            }
+        });
+
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('touchstart', unlockAudio);
+    };
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
 
     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
 
