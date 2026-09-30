@@ -354,8 +354,10 @@ def update_bio():
 
 @app.route('/delete/<filename>', methods=['POST'])
 def delete_post(filename):
-    if 'username' in session and filename.lower().startswith(f"{session['username'].lower
+    if 'username' in session and f"_{session['username'].lower()}_" in f"_{filename.lower()}":
+
         base_name = filename.rsplit('.', 1)[0]
+
         paths = [
             os.path.join(app.config['UPLOAD_FOLDER'], filename),
             os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_likes.txt"),
@@ -702,8 +704,7 @@ def invite_to_chat(room_id):
     else:
         flash("Could not discover that username signature on the registry grid.")
 
-    return redirect(url_for('chatroom_view', room_id=room_id))
-
+    return redirect(url_for('feed'))
 @app.route('/accept_chat/<room_id>')
 def accept_chat(room_id):
     if 'username' not in session: return redirect(url_for('login_screen'))
@@ -714,7 +715,7 @@ def accept_chat(room_id):
         with open(chat_meta_path, "a", encoding="utf-8") as f:
             f.write(f"{session['username'].lower()}\n")
         flash("You have successfully authorized your terminal and joined the chatroom!")
-        return redirect(url_for('chatroom_view', room_id=room_id))
+    return redirect(url_for('feed'))
 
     flash("This chat environment has expired or does not exist.")
     return redirect(url_for('feed'))
