@@ -386,12 +386,14 @@
 
 
 
+    // 🚀 SILENT REAL-TIME MULTI-FEED INTERSECTION PIPELINE
     let currentTotalPostCount = -1;
 
     async function syncPlatformAssetsLive() {
         try {
             const profileParam = new URLSearchParams(window.location.search).get('profile') || '';
 
+            // 1. SILENT AUTO-FEED INJECTOR: Pulls post registry logs down without a popup banner
             const feedCheck = await fetch(`/api/feed_count?profile=${profileParam}`);
             const feedData = await feedCheck.json();
 
@@ -400,9 +402,11 @@
             } else if (feedData.count > currentTotalPostCount) {
                 currentTotalPostCount = feedData.count;
 
+                // 🔄 BACKGROUND RE-FETCH: Grabs updated template structures seamlessly
                 const response = await fetch(window.location.href);
                 const htmlText = await response.text();
 
+                // Swaps out ONLY the center scroll container to prevent page resets
                 const parser = new DOMParser();
                 const newDoc = parser.parseFromString(htmlText, 'text/html');
                 const newFeed = newDoc.querySelector('.feed-container');
@@ -411,10 +415,12 @@
                 if (newFeed && currentFeed) {
                     currentFeed.innerHTML = newFeed.innerHTML;
 
+                    // Re-bind the observers instantly to hook any new autoplay items
                     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
                 }
             }
 
+            // 2. LIVE SIDEBAR NOTIFICATION PIPELINE
             const notifCheck = await fetch("/api/live_notifications");
             const notifData = await notifCheck.json();
             const notifBox = document.getElementById('live-notif-box');
@@ -437,10 +443,81 @@
         }
     }
 
+    // Initialize baseline scan and fire background sync checks securely every 3 seconds
     syncPlatformAssetsLive();
     setInterval(syncPlatformAssetsLive, 3000);
 
 </script>
+
+<script>
+    const logStream = document.getElementById('log-stream');
+    const msgForm = document.getElementById('msg-form');
+    const msgText = document.getElementById('msg-text');
+
+    let lastMessageCount = 0;
+
+    // 🚀 ULTRA-LIGHT POLLING DISPATCHER: Syncs messages seamlessly from disk
+    async function fetchChatMessages() {
+        try {
+            const response = await fetch("/chat_messages/{{ room_id }}");
+            const data = await response.json();
+
+            if (data.messages.length !== lastMessageCount) {
+                let incomingMessagesExist = lastMessageCount !== 0;
+                logStream.innerHTML = '';
+
+                data.messages.forEach(msg => {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'message-bubble';
+
+                    if (msg.user.toLowerCase() === "{{ current_user.lower() }}") {
+                        bubble.style.borderLeftColor = '#34a853';
+                    }
+
+                    bubble.innerHTML = `<strong>@${msg.user}:</strong> ${msg.msg}`;
+                    logStream.appendChild(bubble);
+                });
+
+                // 🔔 TAB NOTIFIER: If a friend types a new message while you are looking at another tab, alert!
+                if (incomingMessagesExist && document.hidden) {
+                    document.title = "(1) google giggles - secure terminal channel";
+                }
+
+                logStream.scrollTop = logStream.scrollHeight;
+                lastMessageCount = data.messages.length;
+            }
+        } catch (err) {
+            console.log("Terminal sync issue:", err);
+        }
+    }
+
+    msgForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const text = msgText.value.trim();
+        if (!text) return;
+
+        const formData = new FormData();
+        formData.append('message', text);
+        msgText.value = '';
+
+        await fetch("/chat_send/{{ room_id }}", {
+            method: "POST",
+            body: formData
+        });
+
+        fetchChatMessages();
+    });
+
+    // 🔊 FOCUS RESET: Instantly wipes out the (1) unread alert the moment you click back into this tab
+    window.addEventListener('focus', () => {
+        document.title = "google giggles - secure terminal channel";
+    });
+
+    // Run initial sync on load, then check back every 1.5 seconds safely
+    fetchChatMessages();
+    setInterval(fetchChatMessages, 1500);
+</script>
+
 
 </body>
 </html>
