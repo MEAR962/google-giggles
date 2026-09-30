@@ -248,9 +248,16 @@
             <!-- BOX 2: ACCOUNT DETAILED BIOGRAPHY DESCRIPTION WINDOW -->
             <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left; display: flex; flex-direction: column;">
                 <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Biography</h3>
-                <p style="font-size: 14px; color: #ddd; margin: 0; line-height: 1.5; font-style: italic; overflow-y: auto; flex: 1;">
-                    {{ user_bio if user_bio else "This individual hasn't declared their baseline terminal description log parameters yet." }}
-                </p>
+                {% if profile_view.lower() == current_user.lower() %}
+                    <form action="/update_bio" method="POST" style="display: flex; flex-direction: column; flex: 1; gap: 8px;">
+                        <textarea name="bio" rows="4" class="bio-textarea" style="flex: 1; background: #0a0a0a; font-size: 13px;" placeholder="Write your custom SpaceHey bio parameters here...">{{ user_bio }}</textarea>
+                        <button type="submit" class="submit-btn" style="background: #34a853; font-size: 11px; padding: 6px; width: auto; align-self: flex-end;">Save Biography</button>
+                    </form>
+                {% else %}
+                    <p style="font-size: 14px; color: #ddd; margin: 0; line-height: 1.5; font-style: italic; overflow-y: auto; flex: 1;">
+                        {{ user_bio if user_bio else "This individual hasn't declared their baseline terminal description log parameters yet." }}
+                    </p>
+                {% endif %}
             </div>
 
             <!-- BOX 3: CURRENT MOOD & STATUS TICKER JOURNAL -->
@@ -297,12 +304,19 @@
                 </div>
             </div>
 
-            <!-- BOX 6: MISSION OBJECTIVES & CONTACT GRID MAP -->
-            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left;">
-                <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Who I Want to Meet</h3>
-                <p style="font-size: 13px; color: #bbb; margin: 4px 0; line-height: 1.5;">
-                    "Looking to synchronize coordinate logs with fellow high-tier creators across the web. Send me a secure invite link to a chatroom channel!"
-                </p>
+                       <!-- BOX 6: MISSION OBJECTIVES & CONTACT GRID MAP -->
+            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left; display: flex; flex-direction: column;">
+                <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">What I Want to Do & Who I Want to Meet</h3>
+                {% if profile_view.lower() == current_user.lower() %}
+                    <form action="/update_objectives" method="POST" style="display: flex; flex-direction: column; flex: 1; gap: 8px;">
+                        <textarea name="objectives" rows="4" class="bio-textarea" style="flex: 1; background: #0a0a0a; font-size: 13px;" placeholder="What do you want to do? Who do you want to meet? declare your objectives...">{{ user_objectives }}</textarea>
+                        <button type="submit" class="submit-btn" style="background: #34a853; font-size: 11px; padding: 6px; width: auto; align-self: flex-end;">Save Objectives</button>
+                    </form>
+                {% else %}
+                    <p style="font-size: 13px; color: #bbb; margin: 4px 0; line-height: 1.5; font-style: italic; overflow-y: auto; flex: 1;">
+                        {{ user_objectives if user_objectives else "Looking to synchronize coordinate logs with fellow high-tier creators across the web." }}
+                    </p>
+                {% endif %}
             </div>
 
         </div>
@@ -489,11 +503,6 @@
     }
 
     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
-
-    // 🚀 SILENT REAL-TIME MULTI-FEED INTERSECTION PIPELINE
-    let currentTotalPostCount = -1;
-
-
 
     // 🚀 SILENT REAL-TIME MULTI-FEED INTERSECTION PIPELINE
     let currentTotalPostCount = -1;
