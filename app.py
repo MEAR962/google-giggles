@@ -771,7 +771,7 @@ def chat_messages(room_id):
 
     return {"messages": messages}
 
-    @app.route('/api/feed_count')
+@app.route('/api/feed_count')
 def api_feed_count():
     """Returns the total number of approved post logs currently sitting in storage."""
     if 'username' not in session: return {"count": 0}, 401
