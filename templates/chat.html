@@ -67,9 +67,9 @@
         logStream.scrollTop = logStream.scrollHeight;
     };
 
-    msgForm.addEventListener('submit', function(e) {
+      msgForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const text = msgText.value.strip ? msgText.value.strip() : msgText.value.trim();
+        const text = msgText.value.trim(); 
         if (!text) return;
 
         const formData = new FormData();
