@@ -318,6 +318,11 @@ def feed():
                     if session['username'].lower() in [line.strip().lower() for line in f]:
                         authorized_chatrooms.append(c_room_id)
             except: pass
+    user_objectives = ""
+    obj_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_objectives.txt")
+    if os.path.exists(obj_path):
+        with open(obj_path, "r", encoding="utf-8") as f:
+            user_objectives = f.read()
 
     # ⚡ Ensure the word 'response' aligns perfectly here
     response = make_response(render_template(
@@ -850,6 +855,14 @@ def api_live_notifications():
 
     return {"notifications": notifications[:15]}
 
+@app.route('/update_objectives', methods=['POST'])
+def update_objectives():
+    if 'username' in session:
+        obj_text = request.form.get('objectives', '').strip()
+        obj_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_objectives.txt")
+        with open(obj_path, "w", encoding="utf-8") as f:
+            f.write(obj_text)
+    return redirect(url_for('feed', profile=session['username']))
 
 if __name__ == '__main__':
     app.run(debug=True)
