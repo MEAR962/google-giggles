@@ -323,6 +323,20 @@ def feed():
     if os.path.exists(obj_path):
         with open(obj_path, "r", encoding="utf-8") as f:
             user_objectives = f.read()
+    user_mood = ""
+    mood_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_mood.txt")
+    if os.path.exists(mood_path):
+        with open(mood_path, "r", encoding="utf-8") as f:
+            user_mood = f.read()
+
+    # Load multi-field custom interests JSON layout map
+    user_interests = {"music": "Memes, Bass drops", "general": "Coding, Shuffling", "movies": "Internet humor collections", "tv": "Highlight clips", "books": "Technical manuals", "heroes": "@Mear (Chief Executive Admin)"}
+    interests_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_interests.json")
+    if os.path.exists(interests_path):
+        try:
+            with open(interests_path, "r", encoding="utf-8") as f:
+                user_interests.update(json.load(f))
+        except: pass
 
     # ⚡ Ensure the word 'response' aligns perfectly here
     response = make_response(render_template(
@@ -862,6 +876,30 @@ def update_objectives():
         obj_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_objectives.txt")
         with open(obj_path, "w", encoding="utf-8") as f:
             f.write(obj_text)
+    return redirect(url_for('feed', profile=session['username']))
+@app.route('/update_mood', methods=['POST'])
+def update_mood():
+    if 'username' in session:
+        mood_text = request.form.get('mood', '').strip()
+        mood_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_mood.txt")
+        with open(mood_path, "w", encoding="utf-8") as f:
+            f.write(mood_text)
+    return redirect(url_for('feed', profile=session['username']))
+
+@app.route('/update_interests', methods=['POST'])
+def update_interests():
+    if 'username' in session:
+        interests_data = {
+            "music": request.form.get('music', '').strip(),
+            "general": request.form.get('general', '').strip(),
+            "movies": request.form.get('movies', '').strip(),
+            "tv": request.form.get('tv', '').strip(),
+            "books": request.form.get('books', '').strip(),
+            "heroes": request.form.get('heroes', '').strip()
+        }
+        interests_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_interests.json")
+        with open(interests_path, "w", encoding="utf-8") as f:
+            json.dump(interests_data, f)
     return redirect(url_for('feed', profile=session['username']))
 
 if __name__ == '__main__':
