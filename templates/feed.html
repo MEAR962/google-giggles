@@ -74,6 +74,56 @@
     <a href="/?profile={{ current_user }}" class="nav-btn {% if profile_view == current_user %}nav-active{% endif %}"> My Dashboard</a>
 
     <p style="margin: 5px 0 10px 0; font-size: 13px; color: #aaa;">
+
+    <div class="profile-header-card">
+
+        <div style="margin-bottom: 12px; position: relative; display: inline-block;">
+            {% if target_pfp %}
+                <img src="{{ url_for('static', filename='uploads/' + target_pfp) }}" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid #1a73e8;">
+            {% else %}
+                <div style="width: 90px; height: 90px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; font-size: 32px; border: 2px solid #444; margin: 0 auto;">👤</div>
+            {% endif %}
+
+
+            {% if not profile_view or profile_view.lower() == current_user.lower() %}
+                <form action="/upload_pfp" method="POST" enctype="multipart/form-data" style="margin-top: 5px;">
+                    <label for="pfp-input" style="font-size: 11px; color: #1a73e8; cursor: pointer; text-decoration: underline; display: block;">Change Photo</label>
+                    <input type="file" id="pfp-input" name="pfp_file" accept=".png, .jpg, .jpeg, .gif" style="display: none;" onchange="this.form.submit()">
+                </form>
+            {% endif %}
+        </div>
+
+
+        <h3 style="color: #1a73e8; margin: 0 0 5px 0;">@{{ profile_view if profile_view else current_user }}</h3>
+
+        {% if not profile_view or profile_view.lower() == current_user.lower() %}
+            <form action="/update_bio" method="POST">
+                <textarea name="bio" rows="2" class="bio-textarea" placeholder="Write a short description about yourself...">{{ user_bio }}</textarea>
+                <button type="submit" class="editor-btn" style="background: #34a853; font-size: 12px; padding: 5px; margin-top: 5px;">Update Bio</button>
+            </form>
+        {% else %}
+            <p style="font-size: 13px; color: #ddd; background: #1a1a1a; padding: 8px; border-radius: 4px; margin: 0; text-align: left; font-style: italic;">{{ user_bio if user_bio else "No description loaded yet." }}</p>
+        {% endif %}
+
+
+        {% if not profile_view or profile_view.lower() == current_user.lower() %}
+            <form action="/post_status" method="POST" style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
+                <input type="text" name="status_content" placeholder="What's on your mind? (Unmoderated thoughts...)" required
+                       style="width: 100%; background: #111; color: white; border: 1px solid #444; padding: 8px; border-radius: 4px; box-sizing: border-box; font-size: 13px;">
+                <button type="submit" class="editor-btn" style="background: #1a73e8; font-size: 12px; padding: 4px; margin-top: 5px;">Broadcast Thought</button>
+            </form>
+        {% endif %}
+
+
+        <div style="margin-top: 15px; max-height: 180px; overflow-y: auto; text-align: left; display: flex; flex-direction: column; gap: 6px;">
+            {% for status in target_statuses %}
+                <div style="background: #111; padding: 8px; border-radius: 4px; border-left: 3px solid #34a853; font-size: 12px; word-wrap: break-word; color: #eee;">
+                    {{ status.content }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <p style="margin: 5px 0 10px 0; font-size: 13px; color: #aaa;">
          Followers: <strong>{{ follower_count }}</strong>
     </p>
 
