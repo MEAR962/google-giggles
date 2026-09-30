@@ -227,6 +227,25 @@ def feed():
 
     is_target_profile_mod = profile_view.lower() in get_moderators_list() if profile_view else False
 
+    target_pfp = None
+    target_statuses = []
+
+
+    for f in os.listdir(app.config['UPLOAD_FOLDER']):
+        if f.startswith(f"pfp_{bio_user.lower()}."):
+            target_pfp = f
+            break
+
+
+    target_status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_status_posts.txt")
+    if os.path.exists(target_status_path):
+        with open(target_status_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if "||" in line:
+                    ts, content = line.strip().split("||", 1)
+                    target_statuses.append({"timestamp": ts, "content": content})
+        target_statuses.reverse()
+
 
     pending_queue = []
 
@@ -265,6 +284,9 @@ def feed():
         is_mod=is_current_user_mod,
         pending_queue=pending_queue,
         is_target_profile_mod=is_target_profile_mod
+        target_pfp=target_pfp,
+        target_statuses=target_statuses
+
     ))
 
 
@@ -543,7 +565,52 @@ def toggle_mod(target_username):
             f.write(mod + "\n")
 
     return redirect(url_for('feed', profile=target_username))
+@app.route('/upload_pfp', methods=['POST'])
+def upload_pfp():
+    if 'username' not in session:
+        return redirect(url_for('login_screen'))
+
+    if 'pfp_file' not in request.files:
+        flash('No file component detected.')
+        return redirect(url_for('feed', profile=session['username']))
+
+    file = request.files['pfp_file']
+    if file.filename == '':
+        flash('No file selected.')
+        return redirect(url_for('feed', profile=session['username']))
+
+    if file and allowed_file(file.filename):
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        pfp_filename = f"pfp_{session['username'].lower()}.{ext}"
+        final_path = os.path.join(app.config['UPLOAD_FOLDER'], pfp_filename)
+
+        # Clean out any old profile pictures first
+        for existing_file in os.listdir(app.config['UPLOAD_FOLDER']):
+            if existing_file.startswith(f"pfp_{session['username'].lower()}."):
+                try: os.remove(os.path.join(app.config['UPLOAD_FOLDER'], existing_file))
+                except: pass
+
+        file.save(final_path)
+        flash('Profile picture updated successfully!')
+
+    return redirect(url_for('feed', profile=session['username']))
+
+
+@app.route('/post_status', methods=['POST'])
+def post_status():
+    if 'username' not in session:
+        return redirect(url_for('login_screen'))
+
+    status_text = request.form.get('status_content', '').strip()
+    if status_text:
+        status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_status_posts.txt")
+        import time
+        timestamp = int(time.time())
+        with open(status_path, "a", encoding="utf-8") as f:
+            f.write(f"{timestamp}||{status_text}\n")
+        flash('Status posted successfully!')
+
+    return redirect(url_for('feed', profile=session['username']))
 
 if __name__ == '__main__':
     app.run(debug=True)
-
