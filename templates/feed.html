@@ -380,71 +380,65 @@
         feedWindow.addEventListener('scroll', syncFeedAudio);
     }
 
-    // Attach tracking wrappers safely to every single post card container
+
     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
 
-        // 🚀 LIVE TIMELINE SYNC ENGINE: Auto-checks for fresh posts and background notification alerts
+
+
+
     let currentTotalPostCount = -1;
-    let initialNotifLoadCount = -1;
 
     async function syncPlatformAssetsLive() {
         try {
-            // 1. DYNAMIC FEED TRACKER: Check if the global post volume ledger count has shifted on disk
             const profileParam = new URLSearchParams(window.location.search).get('profile') || '';
+
             const feedCheck = await fetch(`/api/feed_count?profile=${profileParam}`);
             const feedData = await feedCheck.json();
 
             if (currentTotalPostCount === -1) {
                 currentTotalPostCount = feedData.count;
             } else if (feedData.count > currentTotalPostCount) {
-                // If a new post hits the server database registry, inject a clean, clickable alert bar!
                 currentTotalPostCount = feedData.count;
 
-                if (!document.getElementById('new-post-alert-banner')) {
-                    const alertBanner = document.createElement('div');
-                    alertBanner.id = 'new-post-alert-banner';
-                    alertBanner.style.cssText = "position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #34a853; color: white; padding: 12px 24px; font-weight: bold; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 9999; cursor: pointer; font-size: 14px;";
-                    alertBanner.innerHTML = "✨ Fresh Content Broadcasted! Click to stream new memes... 🚀";
+                const response = await fetch(window.location.href);
+                const htmlText = await response.text();
 
-                    alertBanner.onclick = () => window.location.reload();
-                    document.body.appendChild(alertBanner);
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(htmlText, 'text/html');
+                const newFeed = newDoc.querySelector('.feed-container');
+                const currentFeed = document.querySelector('.feed-container');
+
+                if (newFeed && currentFeed) {
+                    currentFeed.innerHTML = newFeed.innerHTML;
+
+                    document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
                 }
             }
 
-            // 2. LIVE NOTIFICATION DISPATCHER: Syncs activity alert logs in real-time
             const notifCheck = await fetch("/api/live_notifications");
             const notifData = await notifCheck.json();
             const notifBox = document.getElementById('live-notif-box');
 
             if (notifBox && notifData.notifications) {
-                if (initialNotifLoadCount === -1) {
-                    initialNotifLoadCount = notifData.notifications.length;
-                } else if (notifData.notifications.length !== initialNotifLoadCount) {
-                    // Instantly clean and overwrite the notification timeline grid natively
-                    notifBox.innerHTML = '';
-
-                    if (notifData.notifications.length === 0) {
-                        notifBox.innerHTML = '<span style="color: #555; font-style: italic;">No new alerts...</span>';
-                    } else {
-                        notifData.notifications.forEach(alertText => {
-                            const notifElement = document.createElement('div');
-                            notifElement.style.cssText = "background: #1a1a1a; padding: 6px; border-radius: 4px; color: #ddd; border-left: 2px solid #ff9800; text-align: left;";
-                            notifElement.innerHTML = alertText;
-                            notifBox.appendChild(notifElement);
-                        });
-                    }
-                    initialNotifLoadCount = notifData.notifications.length;
+                notifBox.innerHTML = '';
+                if (notifData.notifications.length === 0) {
+                    notifBox.innerHTML = '<span style="color: #555; font-style: italic;">No new alerts...</span>';
+                } else {
+                    notifData.notifications.forEach(alertText => {
+                        const notifElement = document.createElement('div');
+                        notifElement.style.cssText = "background: #1a1a1a; padding: 6px; border-radius: 4px; color: #ddd; border-left: 2px solid #ff9800; text-align: left;";
+                        notifElement.innerHTML = alertText;
+                        notifBox.appendChild(notifElement);
+                    });
                 }
             }
         } catch (e) {
-            console.log("Background synchronization delay spike caught:", e);
+            console.log("Background synchronization error:", e);
         }
     }
 
-    // Initialize baseline scan and fire background sync checks securely every 4 seconds
     syncPlatformAssetsLive();
-    setInterval(syncPlatformAssetsLive, 4000);
-
+    setInterval(syncPlatformAssetsLive, 3000);
 
 </script>
 
