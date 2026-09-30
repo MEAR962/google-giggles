@@ -776,24 +776,31 @@ def api_feed_count():
     """Returns the total number of approved post logs currently sitting in storage."""
     if 'username' not in session: return {"count": 0}, 401
 
-    # Fast count of all live media posts
     try:
         all_files = os.listdir(app.config['UPLOAD_FOLDER'])
         media_files = [f for f in all_files if not f.startswith('raw_') and not f.startswith('pending_') and not f.startswith('pfp_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg'))]
 
-        # Add unmoderated text status logs to the total calculation track
         profile_view = request.args.get('profile', '').strip()
-        bio_user = profile_view if profile_view else session.get('username', '')
-        status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_status_posts.txt")
         status_count = 0
-        if os.path.exists(status_path):
-            with open(status_path, "r", encoding="utf-8") as f:
-                status_count = len([line for line in f if "||" in line])
+
+        if profile_view:
+            # 🔒 PROFILE MODE: Track file footprint changes for this account uniquely
+            status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{profile_view.lower()}_status_posts.txt")
+            if os.path.exists(status_path):
+                with open(status_path, "r", encoding="utf-8") as f:
+                    status_count = len([line for line in f if "||" in line])
+        else:
+            # 🌐 GLOBAL HOME FEED MODE: Sum up every single status log signature on disk simultaneously
+            for f_name in all_files:
+                if f_name.endswith('_status_posts.txt'):
+                    try:
+                        with open(os.path.join(app.config['UPLOAD_FOLDER'], f_name), "r", encoding="utf-8") as f:
+                            status_count += len([line for line in f if "||" in line])
+                    except: pass
 
         return {"count": len(media_files) + status_count}
     except:
         return {"count": 0}
-
 
 @app.route('/api/live_notifications')
 def api_live_notifications():
