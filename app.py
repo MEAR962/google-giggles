@@ -137,8 +137,6 @@ def feed():
     media_files = [f for f in all_files if not f.startswith('raw_') and not f.startswith('pending_') and not f.startswith('pfp_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg'))]
 
 
-    import random
-    random.shuffle(media_files)
 
 
 
@@ -216,6 +214,9 @@ def feed():
                         "caption": content,
                         "is_text_only": True
                     })
+
+    import random
+    random.shuffle(posts_data)
 
     current_following = get_following_list(session['username'])
     is_following_profile = profile_view.lower() in current_following if profile_view else False
