@@ -230,10 +230,12 @@
                     <div style="padding: 40px 20px; font-size: 24px; font-weight: bold; text-align: center; color: white; width: 100%; word-wrap: break-word; font-family: monospace;">
                         "{{ post.caption }}"
                     </div>
+
                 {% elif post.filename.endswith('.mp4') %}
-                    <video class="media-content" controls loop>
+                    <video class="media-content" controls loop muted>
                         <source src="{{ url_for('static', filename='uploads/' + post.filename) }}" type="video/mp4">
                     </video>
+
                 {% elif post.filename.endswith('.png') or post.filename.endswith('.jpg') or post.filename.endswith('.jpeg') or post.filename.endswith('.gif') %}
                     <img class="media-content" src="{{ url_for('static', filename='uploads/' + post.filename) }}" alt="Google Giggles Meme Image">
                 {% endif %}
@@ -391,59 +393,57 @@
 
 
 
+
     const observerOptions = { root: document.querySelector('.feed-container'), threshold: 0.6 };
     const videoObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            const currentVideo = entry.target.querySelector('video');
+            const video = entry.target.querySelector('video');
 
             if (entry.isIntersecting) {
 
-                if (currentVideo) {
-                    currentVideo.volume = 1.0;
-                    const playPromise = currentVideo.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(err => {
-
-                            currentVideo.muted = true;
-                            currentVideo.play();
-                        });
-                    }
+                if (video) {
+                    video.play().catch(err => console.log("Autoplay waiting for tap..."));
                 }
             } else {
 
-                if (currentVideo) {
-                    currentVideo.pause();
-                }
-            }
-        });
-
-
-        document.querySelectorAll('.post-card').forEach(card => {
-            const rect = card.getBoundingClientRect();
-            const videoElement = card.querySelector('video');
-            if (videoElement) {
-
-                if (rect.top < -100 || rect.bottom > window.innerHeight + 100) {
-                    videoElement.pause();
+                if (video) {
+                    video.pause();
                 }
             }
         });
     }, observerOptions);
 
 
-    const unlockAudio = () => {
-        document.querySelectorAll('video').forEach(video => {
-            if (video.muted) {
+    let hasInteracted = false;
+    const unlockAudioAndPlay = () => {
+        hasInteracted = true;
+
+
+        document.querySelectorAll('.post-card').forEach(card => {
+            const rect = card.getBoundingClientRect();
+            const video = card.querySelector('video');
+
+
+            if (video && rect.top >= 0 && rect.top < window.innerHeight * 0.5) {
                 video.muted = false;
+                video.volume = 1.0;
+                video.play().catch(e => {});
+            } else if (video) {
+                // Force all background players to absolute silence
+                video.pause();
             }
         });
-        window.removeEventListener('click', unlockAudio);
-        window.removeEventListener('touchstart', unlockAudio);
     };
-    window.addEventListener('click', unlockAudio);
-    window.addEventListener('touchstart', unlockAudio);
+
+
+    window.addEventListener('click', unlockAudioAndPlay);
+    window.addEventListener('touchstart', unlockAudioAndPlay);
+    document.querySelector('.feed-container').addEventListener('scroll', () => {
+        if (!hasInteracted) unlockAudioAndPlay();
+    });
 
     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
+
 
 </script>
 </body>
