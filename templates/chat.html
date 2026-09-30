@@ -1,34 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>google giggles - secure terminal channel</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #050505; color: white; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; height: 100vh; box-sizing: border-box; }
+        .chat-container { width: 100%; max-width: 600px; height: 85vh; background: #111; border: 1px solid #2d2d2d; border-radius: 12px; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        .chat-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d2d2d; padding-bottom: 15px; margin-bottom: 15px; }
+        .chat-header h2 { margin: 0; font-size: 18px; color: #1a73e8; font-family: monospace; }
+        .log-box { flex: 1; overflow-y: auto; background: #0a0a0a; border-radius: 8px; padding: 15px; border: 1px solid #222; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .message-bubble { background: #1a1a1a; padding: 10px 14px; border-radius: 8px; font-size: 14px; word-wrap: break-word; line-height: 1.4; border-left: 3px solid #1a73e8; text-align: left; }
+        .message-bubble strong { color: #1a73e8; }
+        .input-tray { display: flex; gap: 10px; }
+        .msg-input { flex: 1; background: #1a1a1a; color: white; border: 1px solid #333; padding: 12px; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .send-btn { background: #34a853; color: white; border: none; padding: 0 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .action-btn { background: #333; color: white; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; font-size: 12px; text-decoration: none; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h2>📡 CHANNEL_COORDINATE: [{{ room_id }}]</h2>
+        <div style="display: flex; gap: 8px;">
+            <a href="/" class="action-btn">🏠 Home Feed</a>
+            <form action="/leave_chat/{{ room_id }}" method="POST" style="margin: 0;" onsubmit="return confirm('Disconnect terminal connection layer?');">
+                <button type="submit" class="action-btn" style="background: #ea4335; border: none;">🛑 Leave Channel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invitation Form Block -->
+    <form action="/invite_to_chat/{{ room_id }}" method="POST" style="display: flex; gap: 8px; margin-bottom: 15px;">
+        <input type="text" name="target_username" placeholder="Type account tag code to authorize profile invite..." required class="msg-input" style="padding: 6px; font-size: 12px;">
+        <button type="submit" class="send-btn" style="font-size: 12px; padding: 0 15px; background: #1a73e8;">Transmit Invite</button>
+    </form>
+
+    <!-- Chat Logs Window -->
+    <div id="log-stream" class="log-box"></div>
+
+    <!-- Message Input Tray -->
+    <form id="msg-form" class="input-tray">
+        <input type="text" id="msg-text" placeholder="Transmit messaging logs to active network coordinates..." autocomplete="off" required class="msg-input">
+        <button type="submit" class="send-btn">SEND</button>
+    </form>
+</div>
+
 <script>
     const logStream = document.getElementById('log-stream');
     const msgForm = document.getElementById('msg-form');
     const msgText = document.getElementById('msg-text');
-    
+
     let lastMessageCount = 0;
 
-    // 🚀 ULTRA-LIGHT POLLING DISPATCHER: Pulls messages from the server ledger cleanly
+    // 🚀 ULTRA-LIGHT POLLING DISPATCHER: Syncs messages seamlessly from disk
     async function fetchChatMessages() {
         try {
             const response = await fetch("/chat_messages/{{ room_id }}");
             const data = await response.json();
-            
-            // Only re-render elements if a brand new message payload actually hits the ledger file
+
             if (data.messages.length !== lastMessageCount) {
-                logStream.innerHTML = ''; // Clean out chat view frame
-                
+                logStream.innerHTML = ''; 
+
                 data.messages.forEach(msg => {
                     const bubble = document.createElement('div');
                     bubble.className = 'message-bubble';
-                    
-                    // Highlight your own messages with a clean green left-border tag natively
+
                     if (msg.user.toLowerCase() === "{{ current_user.lower() }}") {
                         bubble.style.borderLeftColor = '#34a853';
                     }
-                    
+
                     bubble.innerHTML = `<strong>@${msg.user}:</strong> ${msg.msg}`;
                     logStream.appendChild(bubble);
                 });
-                
-                logStream.scrollTop = logStream.scrollHeight; // Auto-scroll to freshest content
+
+                logStream.scrollTop = logStream.scrollHeight; 
                 lastMessageCount = data.messages.length;
             }
         } catch (err) {
@@ -36,7 +83,6 @@
         }
     }
 
-    // AJAX Form submitter: appends inputs to server filesystem seamlessly
     msgForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const text = msgText.value.trim();
@@ -44,18 +90,20 @@
 
         const formData = new FormData();
         formData.append('message', text);
-        msgText.value = ''; // Instantly clear input field for crisp, immediate user feedback
+        msgText.value = ''; 
 
         await fetch("/chat_send/{{ room_id }}", {
             method: "POST",
             body: formData
         });
 
-        fetchChatMessages(); // Instantly update view frame on local statement transmission
+        fetchChatMessages(); 
     });
 
-    // Run initial sync on load, then loop back safely every 1.5 seconds 
+    // Run initial sync on load, then check back every 1.5 seconds safely
     fetchChatMessages();
     setInterval(fetchChatMessages, 1500);
-
 </script>
+
+</body>
+</html>
