@@ -188,7 +188,7 @@
             {% endif %}
             {% for notif in notifications %}
             <div style="background: #1a1a1a; padding: 6px; border-radius: 4px; color: #ddd; border-left: 2px solid #ff9800;">
-                {{ notif }}
+                {{ notif|safe }}
             </div>
             {% endfor %}
         </div>
