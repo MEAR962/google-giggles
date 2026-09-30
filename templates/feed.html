@@ -152,6 +152,27 @@
             <button type="submit" id="submit-btn" class="submit-btn">Upload Post</button>
         </form>
     </div>
+
+    <div style="background: #1a1a1a; border: 1px solid #2f2f2f; padding: 15px; border-radius: 8px; margin-top: 10px; text-align: left;">
+        <h4 style="margin: 0 0 10px 0; color: #1a73e8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">💬 Real-Time Chat Networks</h4>
+
+        <form action="/create_chat" method="POST" style="margin-bottom: 12px;">
+            <button type="submit" class="submit-btn" style="background: #1a73e8; font-size: 13px; padding: 8px;">Initialize Secure Chatroom</button>
+        </form>
+
+        <div style="font-size: 12px; font-weight: bold; color: #aaa; margin-bottom: 5px;">Your Authorized Channels:</div>
+        <div style="display: flex; flex-direction: column; gap: 5px; max-height: 100px; overflow-y: auto;">
+            {% if not my_chats %}
+                <span style="color: #555; font-style: italic;">No active room channel coordinates mapped...</span>
+            {% endif %}
+            {% for room in my_chats %}
+                <a href="/chat/{{ room }}" style="color: #34a853; text-decoration: none; font-weight: bold; padding: 6px; background: #111; border-radius: 4px; border-left: 2px solid #34a853; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    Connected Channel [{{ room[5:15] }}]
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
     <div style="background: #111; border: 1px solid #2d2d2d; padding: 12px; border-radius: 6px; margin-top: 10px; text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <h4 style="margin: 0; color: #ff9800; font-size: 12px; text-transform: uppercase;"> Activity Log:</h4>
@@ -290,20 +311,20 @@
     const submitBtn = document.getElementById('submit-btn');
     const processingStatus = document.getElementById('processing-status');
 
-    // ⚡ INSTANT LOADER: Simple standard file input validation handler
+
     fileInput.addEventListener('change', function(e) {
         if (e.target.files.length > 0) {
             submitBtn.disabled = false;
         }
     });
 
-    // 🚀 FORM SUBMITTER: Prevents double uploading and highlights loading states
+
     uploadForm.addEventListener('submit', function(e) {
         submitBtn.style.display = 'none';
         processingStatus.style.display = 'block';
     });
 
-    // 🔒 CRASH-PROOF SCROLL SNAP INTERSECTION OBSERVER PIPELINE
+
     const observerOptions = {
         root: document.querySelector('.feed-container'),
         threshold: 0.5
@@ -314,13 +335,13 @@
             const video = entry.target.querySelector('video');
 
             if (entry.isIntersecting) {
-                // 🚀 SCROLLED IN: If this card has a video, play it from the first frame
+
                 if (video) {
                     video.currentTime = 0;
                     video.play().catch(err => console.log("Waiting for user interaction..."));
                 }
             } else {
-                // 🛑 SCROLLED AWAY: Force instant silent freeze to kill all sound leaks!
+
                 if (video) {
                     video.pause();
                     video.muted = true;
@@ -329,20 +350,20 @@
         });
     }, observerOptions);
 
-    // 🔊 CENTRAL AUDIO ENGINE: Automatically coordinates track sound mappings on user contact
+
     const syncFeedAudio = () => {
         document.querySelectorAll('.post-card').forEach(card => {
             const rect = card.getBoundingClientRect();
             const video = card.querySelector('video');
 
             if (video) {
-                // If this specific media card is taking up the center view layout slot, unmute it
+
                 if (rect.top >= -100 && rect.top <= window.innerHeight * 0.5) {
                     video.muted = false;
                     video.volume = 1.0;
                     video.play().catch(e => {});
                 } else {
-                    // Force background videos to stop playing and remain completely silent
+
                     video.pause();
                     video.muted = true;
                 }
@@ -350,7 +371,7 @@
         });
     };
 
-    // Bind interaction traps to bypass browser privacy blocks safely
+
     window.addEventListener('click', syncFeedAudio);
     window.addEventListener('touchstart', syncFeedAudio);
 
@@ -365,4 +386,3 @@
 
 </body>
 </html>
-
