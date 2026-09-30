@@ -285,159 +285,64 @@
 </div>
 
 <script>
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true });
-
     const fileInput = document.getElementById('media-file');
-    const editorContainer = document.getElementById('editor-container');
-    const startTimeInput = document.getElementById('start-time');
-    const lockTrimBtn = document.getElementById('lock-trim-btn');
     const uploadForm = document.getElementById('upload-form');
     const submitBtn = document.getElementById('submit-btn');
     const processingStatus = document.getElementById('processing-status');
 
-    let isVideo = false;
-    let isTrimLocked = false;
-    let rawVideoFile = null;
-
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            rawVideoFile = file;
-
-            if (file.type.includes('video') && !file.name.endswith('.gif')) {
-                isVideo = true;
-                isTrimLocked = false;
-                submitBtn.disabled = true;
-                editorContainer.style.display = 'block';
-            } else {
-                isVideo = false;
-                isTrimLocked = true;
-                editorContainer.style.display = 'none';
-                submitBtn.disabled = false;
-            }
-        });
-
-    lockTrimBtn.addEventListener('click', function() {
-        const start = parseFloat(startTimeInput.value);
-
-        if (isNaN(start) || start < 0) {
-            alert("Please enter a valid start time in seconds.");
-            return;
+    // ⚡ INSTANT LOADER: Simple standard file input validation handler
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            submitBtn.disabled = false;
         }
-
-        isTrimLocked = true;
-        submitBtn.disabled = false;
-        alert(" Trim window locked at second " + start + "! Click 'Upload Post' to process.");
     });
 
-            uploadForm.addEventListener('submit', async function(e) {
-            if (!isVideo) return;
+    // 🚀 FORM SUBMITTER: Prevents double uploading and highlights loading states
+    uploadForm.addEventListener('submit', function(e) {
+        submitBtn.style.display = 'none';
+        processingStatus.style.display = 'block';
+    });
 
-            e.preventDefault();
-
-            if (!isTrimLocked) {
-                alert("Please click 'Lock In Cut Specs' before posting your clip!");
-                return;
-            }
-
-            submitBtn.style.display = 'none';
-            processingStatus.style.display = 'block';
-
-            const start = parseFloat(startTimeInput.value);
-
-            let duration = parseFloat(document.getElementById('clip-duration').value);
-            if (isNaN(duration) || duration <= 0 || duration > 60) {
-                duration = 35;
-            }
-
-            try {
-                if (!ffmpeg.isLoaded()) {
-                    await ffmpeg.load();
-                }
-
-                ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(rawVideoFile));
-
-                await ffmpeg.run(
-                    '-ss', start.toString(),
-                    '-i', 'input.mp4',
-                    '-t', duration.toString(),
-                    '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
-                    '-crf', '28',
-                    '-c:a', 'aac',
-                    'output.mp4'
-                );
-
-                const data = ffmpeg.FS('readFile', 'output.mp4');
-                const slicedBlob = new Blob([data.buffer], { type: 'video/mp4' });
-                const slicedFile = new File([slicedBlob], rawVideoFile.name, { type: 'video/mp4' });
-
-                ffmpeg.FS('unlink', 'input.mp4');
-                ffmpeg.FS('unlink', 'output.mp4');
-
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(slicedFile);
-                fileInput.files = dataTransfer.files;
-
-                uploadForm.submit();
-
-            } catch (error) {
-                console.error("WASM pipeline breakdown: ", error);
-                alert("WebAssembly stream pipeline issue. Submitting original path reference.");
-                uploadForm.submit();
-            }
-        });
-
-
-
-
-<script>
-    // 🔒 BULLETPROOF ROTATION FEED INTERSECTION OBSERVER PIPELINE
+    // 🔒 CRASH-PROOF SCROLL SNAP INTERSECTION OBSERVER PIPELINE
     const observerOptions = {
         root: document.querySelector('.feed-container'),
-        threshold: 0.5 // Triggers right when the card fills the center frame layout
+        threshold: 0.5
     };
 
     const videoObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const video = entry.target.querySelector('video');
-            if (!video) return; // ⚡ FIXED: Safely exits if it hits a text-only card post
 
             if (entry.isIntersecting) {
-                // 🚀 SCROLLED IN: Play video automatically
-                video.currentTime = 0; // Always start back at the beginning frame segment
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(err => {
-                        // Browser compliance fallback tracker: mute so it autoplays anyway!
-                        video.muted = true;
-                        video.play().catch(e => console.log("Playback override blocked:", e));
-                    });
+                // 🚀 SCROLLED IN: If this card has a video, play it from the first frame
+                if (video) {
+                    video.currentTime = 0;
+                    video.play().catch(err => console.log("Waiting for user interaction..."));
                 }
             } else {
-                // 🛑 SCROLLED AWAY: Pause playback and mute instantly to stop audio leaks!
-                video.pause();
-                video.muted = true;
+                // 🛑 SCROLLED AWAY: Force instant silent freeze to kill all sound leaks!
+                if (video) {
+                    video.pause();
+                    video.muted = true;
+                }
             }
         });
     }, observerOptions);
 
-    // 🔊 CENTRAL AUDIO UNLOCKER: Unmutes the centered card the split second a user interacts with the app
-    const unlockAndSyncAudio = () => {
+    // 🔊 CENTRAL AUDIO ENGINE: Automatically coordinates track sound mappings on user contact
+    const syncFeedAudio = () => {
         document.querySelectorAll('.post-card').forEach(card => {
             const rect = card.getBoundingClientRect();
             const video = card.querySelector('video');
-            
+
             if (video) {
-                // Check if this specific media card is currently occupying the center viewport slot
+                // If this specific media card is taking up the center view layout slot, unmute it
                 if (rect.top >= -100 && rect.top <= window.innerHeight * 0.5) {
                     video.muted = false;
                     video.volume = 1.0;
                     video.play().catch(e => {});
                 } else {
-                    // Force all background elements out to absolute silent pauses
+                    // Force background videos to stop playing and remain completely silent
                     video.pause();
                     video.muted = true;
                 }
@@ -445,19 +350,19 @@
         });
     };
 
-    // Bind interaction traps to clean up browser security overrides instantly
-    window.addEventListener('click', unlockAndSyncAudio);
-    window.addEventListener('touchstart', unlockAndSyncAudio);
-    
-    // Wire up continuous scrolling state updates
-    const container = document.querySelector('.feed-container');
-    if (container) {
-        container.addEventListener('scroll', unlockAndSyncAudio);
+    // Bind interaction traps to bypass browser privacy blocks safely
+    window.addEventListener('click', syncFeedAudio);
+    window.addEventListener('touchstart', syncFeedAudio);
+
+    const feedWindow = document.querySelector('.feed-container');
+    if (feedWindow) {
+        feedWindow.addEventListener('scroll', syncFeedAudio);
     }
 
-    // Attach tracking wrappers to all layout posts
+    // Attach tracking wrappers safely to every single post card container
     document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
 </script>
 
 </body>
 </html>
+
