@@ -222,9 +222,9 @@
         <div class="media-wrapper">
 
 
+
             <div class="video-container">
                 <a href="/?profile={{ post.creator }}" class="user-tag">@{{ post.creator }}</a>
-
 
                 {% if post.is_text_only %}
                     <div style="padding: 40px 20px; font-size: 24px; font-weight: bold; text-align: center; color: white; width: 100%; word-wrap: break-word; font-family: monospace;">
@@ -239,14 +239,12 @@
                 {% endif %}
             </div>
 
-
-
-
-            {% if post.caption %}
+            {% if not post.is_text_only and post.caption %}
             <div style="background: rgba(0,0,0,0.4); padding: 10px; margin-top: 10px; border-radius: 6px; font-size: 14px; border-left: 3px solid #1a73e8; word-wrap: break-word;">
                 {{ post.caption }}
             </div>
             {% endif %}
+
 
 
 
