@@ -39,11 +39,9 @@ def get_moderators_list():
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-# ⚡ REPLACE YOUR RECENT CASE-SAFE EXPERIMENT WITH THIS CLEAN ENGINE:
 def add_notification(target_user, alert_text):
     if not target_user:
         return
-    # 🔒 BULLETPROOF: Forces every single alert ledger file to save as lowercase
     filename = f"{target_user.strip().lower()}_notifications.txt"
     notif_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     with open(notif_path, "a", encoding="utf-8") as f:
@@ -200,9 +198,7 @@ def feed():
         with open(bio_path, "r", encoding="utf-8") as f:
             user_bio = f.read()
 
-    # ⚡ CHANGE IT TO THIS (Scans globally for everyone's thoughts on the Home Feed!):
     if profile_view:
-        # 🔒 PROFILE MODE: Only load status journals for this specific targeted account profile view link
         status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_status_posts.txt")
         if os.path.exists(status_path):
             with open(status_path, "r", encoding="utf-8") as f:
@@ -218,10 +214,8 @@ def feed():
                             "is_text_only": True
                         })
     else:
-        # 🌐 GLOBAL FEED MODE: Scan ALL stored user text log matrices to find everyone's thoughts simultaneously
         for f_name in os.listdir(app.config['UPLOAD_FOLDER']):
             if f_name.endswith('_status_posts.txt'):
-                # Extract the creator's username signature directly out of the file name properties string
                 extracted_creator = f_name.replace('_status_posts.txt', '')
 
                 status_path = os.path.join(app.config['UPLOAD_FOLDER'], f_name)
@@ -231,7 +225,6 @@ def feed():
                             if "||" in line:
                                 ts, content = line.strip().split("||", 1)
 
-                                # Search parameter compliance matching pass checks
                                 if search_query:
                                     if search_query not in extracted_creator.lower() and search_query not in content.lower():
                                         continue
@@ -308,7 +301,6 @@ def feed():
 
                 pending_queue.append({"filename": f, "creator": creator_name, "caption": cap})
 
-    # ⚡ CHATROOM SCANNER: Maps active rooms inside the routing architecture context safely
     authorized_chatrooms = []
     for file in os.listdir(app.config['UPLOAD_FOLDER']):
         if file.endswith('_meta.txt'):
@@ -319,7 +311,6 @@ def feed():
                         authorized_chatrooms.append(c_room_id)
             except: pass
 
-    # ⚡ Ensure the word 'response' aligns perfectly here
     response = make_response(render_template(
         'feed.html',
         posts=posts_data,
@@ -354,23 +345,50 @@ def update_bio():
 
 @app.route('/delete/<filename>', methods=['POST'])
 def delete_post(filename):
-    if 'username' in session and f"_{session['username'].lower()}_" in f"_{filename.lower()}":
+    if 'username' not in session:
+        return redirect(url_for('login_screen'))
 
+    username_lower = session['username'].lower()
+    if filename.lower().startswith("text_status_"):
+        try:
+            target_ts = filename.split("_")[2].rsplit(".", 1)[0]
+        except IndexError:
+            return redirect(url_for('feed'))
+
+        status_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{username_lower}_status_posts.txt")
+
+        if os.path.exists(status_file_path):
+ 
+            with open(status_file_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            with open(status_file_path, "w", encoding="utf-8") as f:
+                for line in lines:
+                    if "||" in line:
+                        ts, _ = line.strip().split("||", 1)
+                        if ts == target_ts:
+                            continue 
+                    f.write(line)
+
+            flash("Status thought removed successfully.")
+            return redirect(url_for('feed', profile=session['username']))
+
+    elif f"_{username_lower}_" in f"_{filename.lower()}":
         base_name = filename.rsplit('.', 1)[0]
-
         paths = [
             os.path.join(app.config['UPLOAD_FOLDER'], filename),
             os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_likes.txt"),
-            os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_comments.txt")
+            os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_comments.txt"),
+            os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_caption.txt"),
+            os.path.join(app.config['UPLOAD_FOLDER'], f"{base_name}_liked_users.txt")
         ]
         for p in paths:
             if os.path.exists(p):
                 os.remove(p)
         flash("Post removed successfully.")
         return redirect(url_for('feed', profile=session['username']))
+
     return redirect(url_for('feed'))
-
-
 
 @app.route('/logout')
 def logout_action():
@@ -602,7 +620,6 @@ def toggle_mod(target_username):
         add_notification(target_username, "👑 Congratulations! @Mear has promoted you to an official Platform Moderator!")
         flash(f"@{target_username} successfully promoted to Moderator!")
 
-    # Write clean state back to disk
     with open(MODERATORS_FILE, "w", encoding="utf-8") as f:
         for mod in current_mods:
             f.write(mod + "\n")
@@ -627,7 +644,6 @@ def upload_pfp():
         pfp_filename = f"pfp_{session['username'].lower()}.{ext}"
         final_path = os.path.join(app.config['UPLOAD_FOLDER'], pfp_filename)
 
-        # Clean out any old profile pictures first
         for existing_file in os.listdir(app.config['UPLOAD_FOLDER']):
             if existing_file.startswith(f"pfp_{session['username'].lower()}."):
                 try: os.remove(os.path.join(app.config['UPLOAD_FOLDER'], existing_file))
@@ -661,7 +677,7 @@ def create_chat():
     import time
     room_id = f"room_{int(time.time())}"
 
-    # ⚡ FIXED: Forces the path to save inside static/uploads/
+
     chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
 
     with open(chat_meta_path, "w", encoding="utf-8") as f:
@@ -675,7 +691,6 @@ def create_chat():
 def chatroom_view(room_id):
     if 'username' not in session: return redirect(url_for('login_screen'))
 
-    # ⚡ FIXED: Points safely to static/uploads/
     chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
 
     authorized = False
@@ -698,7 +713,7 @@ def invite_to_chat(room_id):
     target_user = request.form.get('target_username', '').strip().lower()
 
     if target_user and find_user(target_user):
-        # 🚀 TRANSMIT INVITE: Drops a clean, unescaped clickable hyperlink into their dashboard timeline metrics
+
         add_notification(target_user, f"✉️ @{session['username']} invited you to join an elite group chat! <a href='/accept_chat/{room_id}' style='color:#34a853;font-weight:bold;text-decoration:underline;'>[JOIN]</a>")
         flash(f"Invitation cleanly transmitted over the grid to @{target_user}!")
     else:
@@ -711,7 +726,7 @@ def accept_chat(room_id):
     chat_meta_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_meta.txt")
 
     if os.path.exists(chat_meta_path):
-        # Securely append their username signature to the access authorization file
+
         with open(chat_meta_path, "a", encoding="utf-8") as f:
             f.write(f"{session['username'].lower()}\n")
         flash("You have successfully authorized your terminal and joined the chatroom!")
@@ -731,7 +746,7 @@ def leave_chat(room_id):
             members = [line.strip().lower() for line in f if line.strip()]
         if session['username'].lower() in members:
             members.remove(session['username'].lower())
-        # Write remaining members back or kill room file entirely if empty
+
         if members:
             with open(chat_meta_path, "w", encoding="utf-8") as f:
                 for m in members: f.write(f"{m}\n")
@@ -750,7 +765,7 @@ def chat_send(room_id):
 
     if msg_text:
         chat_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{room_id}_chat.txt")
-        # ⚡ ACCESSIBLE FILE STORAGE: Saves messages permanently to disk
+
         with open(chat_path, "a", encoding="utf-8") as f:
             f.write(f"{session['username']}||{msg_text}\n")
 
@@ -785,13 +800,13 @@ def api_feed_count():
         status_count = 0
 
         if profile_view:
-            # 🔒 PROFILE MODE: Track file footprint changes for this account uniquely
+ 
             status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{profile_view.lower()}_status_posts.txt")
             if os.path.exists(status_path):
                 with open(status_path, "r", encoding="utf-8") as f:
                     status_count = len([line for line in f if "||" in line])
         else:
-            # 🌐 GLOBAL HOME FEED MODE: Sum up every single status log signature on disk simultaneously
+
             for f_name in all_files:
                 if f_name.endswith('_status_posts.txt'):
                     try:
@@ -814,7 +829,7 @@ def api_live_notifications():
         try:
             with open(notif_path, "r", encoding="utf-8") as f:
                 notifications = [line.strip() for line in f.readlines() if line.strip()]
-            notifications.reverse()  # Freshest alerts first
+            notifications.reverse()  
         except: pass
 
     return {"notifications": notifications[:15]}
