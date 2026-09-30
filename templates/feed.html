@@ -263,12 +263,28 @@
             <!-- BOX 3: CURRENT MOOD & STATUS TICKER JOURNAL -->
             <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left;">
                 <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Current Mood & Blabs</h3>
-                <div style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+
+                <!-- Part A: Dynamic Daily Mood Ticker Input Line -->
+                <div style="margin-bottom: 15px; background: #111; padding: 10px; border-radius: 6px; border: 1px solid #2d2d2d;">
+                    {% if profile_view.lower() == current_user.lower() %}
+                        <form action="/update_mood" method="POST" style="display: flex; gap: 8px; align-items: center;">
+                            <span style="font-weight: bold; font-size: 13px; color: #1a73e8; white-space: nowrap;"> Mood Status:</span>
+                            <input type="text" name="mood" value="{{ user_mood }}" placeholder="How are you feeling today?" style="flex:1; background: #000; color: white; border: 1px solid #444; padding: 6px; border-radius: 4px; font-size: 12px;">
+                            <button type="submit" class="submit-btn" style="background: #34a853; font-size: 11px; padding: 6px; width: auto; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; color: white;">Set</button>
+                        </form>
+                    {% else %}
+                        <div style="font-size: 13px; color: #eee;"><strong style="color: #1a73e8;"> Mood Today:</strong> {{ user_mood if user_mood else "Cruising on the grid matrix..." }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Part B: Structural Status Logs Grid Deck Tracker -->
+                <div style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="font-size: 12px; font-weight: bold; color: #ff9800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Broadcast Logs Archive:</div>
                     {% if not target_statuses %}
                         <span style="color: #555; font-style: italic; font-size: 13px;">No broadcasted thoughts floating on the active ledger grids...</span>
                     {% endif %}
                     {% for status in target_statuses %}
-                        <div style="background: #0a0a0a; padding: 10px; border-radius: 6px; border-left: 3px solid #34a853; font-size: 13px; color: #eee; position: relative;">
+                        <div style="background: #0a0a0a; padding: 10px; border-radius: 6px; border-left: 3px solid #34a853; font-size: 13px; color: #eee; position: relative; text-align: left;">
                             {{ status.content }}
                             {% if profile_view.lower() == current_user.lower() %}
                             <form action="/delete/text_status_{{ status.timestamp }}.txt" method="POST" style="position: absolute; right: 8px; top: 8px; margin: 0;">
@@ -279,6 +295,7 @@
                     {% endfor %}
                 </div>
             </div>
+
 
             <!-- BOX 4: PEOPLE THE PERSON FOLLOWS (CONNECTIONS DECK) -->
             <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left;">
@@ -297,12 +314,31 @@
             <!-- BOX 5: CORE PROFILE INTERESTS MATRIX -->
             <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left;">
                 <h3 style="margin: 0 0 10px 0; color: #ff9800; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; letter-spacing: 0.5px;">Interests</h3>
-                <div style="font-size: 13px; line-height: 1.6; color: #ccc;">
-                    <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Music:</strong> Memes, Bass drops, Video game soundlogs</p>
-                    <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Movies:</strong> Internet humor collections, Clips</p>
-                    <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Heroes:</strong> @Mear (Chief Executive Admin)</p>
-                </div>
+
+                {% if profile_view.lower() == current_user.lower() %}
+                    <form action="/update_interests" method="POST" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: grid; grid-template-columns: 80px 1fr; align-items: center; gap: 5px; font-size: 12px;">
+                            <strong style="color: #1a73e8;">Music:</strong> <input type="text" name="music" value="{{ user_interests.music }}" style="background: #0a0a0a; color: white; border: 1px solid #444; padding: 4px; border-radius: 4px;">
+                            <strong style="color: #1a73e8;">General:</strong> <input type="text" name="general" value="{{ user_interests.general }}" style="background: #0a0a0a; color: white; border: 1px solid #444; padding: 4px; border-radius: 4px;">
+                            <strong style="color: #1a73e8;">Movies:</strong> <input type="text" name="movies" value="{{ user_interests.movies }}" style="background: #0a0a0a; color: white; border: 1px solid #444; padding: 4px; border-radius: 4px;">
+                            <strong style="color: #1a73e8;">TV:</strong> <input type="text" name="tv" value="{{ user_interests.tv }}" style="background: #0a0a0a; color: white; border: 1px solid #444; padding: 4px; border-radius: 4px;">
+                            <strong style="color: #1a73e8;">Books:</strong> <input type="text" name="books" value="{{ user_interests.books }}" style="background: #0a0a0a; color: white; border: 1px solid #444; padding: 4px; border-radius: 4px;">
+                            <strong style="color: #1a73e8;">Heroes:</strong> <input type="text" name="heroes" value="{{ user_interests.heroes }}" style="background: #0a0a0a; color: white; border: 1px solid #444; padding: 4px; border-radius: 4px;">
+                        </div>
+                        <button type="submit" class="submit-btn" style="background: #34a853; font-size: 11px; padding: 6px; width: auto; align-self: flex-end; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Save Interests</button>
+                    </form>
+                {% else %}
+                    <div style="font-size: 13px; line-height: 1.6; color: #ccc;">
+                        <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Music:</strong> {{ user_interests.music }}</p>
+                        <p style="margin: 4px 0;"><strong style="color: #1a73e8;">General:</strong> {{ user_interests.general }}</p>
+                        <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Movies:</strong> {{ user_interests.movies }}</p>
+                        <p style="margin: 4px 0;"><strong style="color: #1a73e8;">TV:</strong> {{ user_interests.tv }}</p>
+                        <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Books:</strong> {{ user_interests.books }}</p>
+                        <p style="margin: 4px 0;"><strong style="color: #1a73e8;">Heroes:</strong> {{ user_interests.heroes }}</p>
+                    </div>
+                {% endif %}
             </div>
+
 
                        <!-- BOX 6: MISSION OBJECTIVES & CONTACT GRID MAP -->
             <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; text-align: left; display: flex; flex-direction: column;">
