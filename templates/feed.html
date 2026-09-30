@@ -224,7 +224,19 @@
             <div class="video-container">
                 <a href="/?profile={{ post.creator }}" class="user-tag">@{{ post.creator }}</a>
 
-                {% if post.filename.endswith('.mp4') %}
+                {% if post.is_text_only %}
+                    <div style="padding: 40px 20px; font-size: 24px; font-weight: bold; text-align: center; color: white; width: 100%; word-wrap: break-word; font-family: monospace;">
+                        "{{ post.caption }}"
+                    </div>
+                {% elif post.filename.endswith('.mp4') %}
+                    <video class="media-content" controls loop>
+                        <source src="{{ url_for('static', filename='uploads/' + post.filename) }}" type="video/mp4">
+                    </video>
+                {% elif post.filename.endswith('.png') or post.filename.endswith('.jpg') or post.filename.endswith('.jpeg') or post.filename.endswith('.gif') %}
+                    <img class="media-content" src="{{ url_for('static', filename='uploads/' + post.filename) }}" alt="Google Giggles Meme Image">
+                {% endif %}
+            </div>
+
                 <video class="media-content" controls loop>
                     <source src="{{ url_for('static', filename='uploads/' + post.filename) }}" type="video/mp4">
                 </video>
