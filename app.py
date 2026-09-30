@@ -739,17 +739,13 @@ def chat_messages(room_id):
 
     return {"messages": messages}
 
-    @app.route('/api/feed_count')
+@app.route('/api/feed_count')
 def api_feed_count():
-    """Returns the total number of approved post logs currently sitting in storage."""
-    if 'username' not in session: return {"count": 0}, 401
-
-    # Fast count of all live media posts
+    if 'username' not in session: 
+        return {"count": 0}, 401
     try:
         all_files = os.listdir(app.config['UPLOAD_FOLDER'])
         media_files = [f for f in all_files if not f.startswith('raw_') and not f.startswith('pending_') and not f.startswith('pfp_') and (f.endswith('.mp4') or f.endswith('.gif') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg'))]
-
-        # Add unmoderated text status logs to the total calculation track
         profile_view = request.args.get('profile', '').strip()
         bio_user = profile_view if profile_view else session.get('username', '')
         status_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{bio_user.lower()}_status_posts.txt")
@@ -757,7 +753,6 @@ def api_feed_count():
         if os.path.exists(status_path):
             with open(status_path, "r", encoding="utf-8") as f:
                 status_count = len([line for line in f if "||" in line])
-
         return {"count": len(media_files) + status_count}
     except:
         return {"count": 0}
@@ -765,18 +760,17 @@ def api_feed_count():
 
 @app.route('/api/live_notifications')
 def api_live_notifications():
-    """Pulls freshest activity logs for the browser background synchronization loop."""
-    if 'username' not in session: return {"notifications": []}, 401
-
+    if 'username' not in session: 
+        return {"notifications": []}, 401
     notif_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session['username'].lower()}_notifications.txt")
     notifications = []
     if os.path.exists(notif_path):
         try:
             with open(notif_path, "r", encoding="utf-8") as f:
                 notifications = [line.strip() for line in f.readlines() if line.strip()]
-            notifications.reverse()  # Freshest alerts first
-        except: pass
-
+            notifications.reverse()
+        except: 
+            pass
     return {"notifications": notifications[:15]}
 
 
