@@ -338,7 +338,7 @@ def feed():
                 user_interests.update(json.load(f))
         except: pass
 
-      # ⚡ MANUALLY EDIT IT TO LOOK EXACTLY LIKE THIS:
+    # ⚡ MANUALLY EDIT IT TO LOOK EXACTLY LIKE THIS:
     response = make_response(render_template(
         'feed.html',
         posts=posts_data,
@@ -356,11 +356,9 @@ def feed():
         target_pfp=target_pfp,
         target_statuses=target_statuses,
         my_chats=authorized_chatrooms,
-        user_mood=user_mood,
-        user_interests=user_interests,
-        user_objectives=user_objectives  # 🔒 FIXED: Delivers your goals data to the screen!
+        user_mood=user_mood,          # 🔒 FIXED
+        user_interests=user_interests  # 🔒 FIXED
     ))
-
 
 
     return response
@@ -635,34 +633,40 @@ def two_factor_checkpoint(username):
     return render_template('2fa.html', question=user_record['question'] if user_record else "", username=username)
 @app.route('/toggle_mod/<target_username>', methods=['POST'])
 def toggle_mod(target_username):
+    if 'username' not in session:
+        return redirect(url_for('login_screen'))
 
-    if 'username' not in session or session['username'].lower() != 'mear':
-        return redirect(url_for('feed'))
+    current_user_lower = session['username'].lower()
+    target_user_lower = target_username.lower()
+    all_mods = get_moderators_list()
 
-    if target_username.lower() == 'mear':
+    # 🔒 AUTHORITY GUARD: Only existing mods can use this route.
+    # Also, completely block anyone from revoking or changing founder @mear's admin status!
+    if current_user_lower not in all_mods or target_user_lower == 'mear':
+        flash("⛔ PERMISSION DENIED: You lack the security clearance to modify this account signature.")
         return redirect(url_for('feed', profile=target_username))
-
 
     current_mods = set()
     if os.path.exists(MODERATORS_FILE):
         with open(MODERATORS_FILE, "r", encoding="utf-8") as f:
             current_mods = {line.strip().lower() for line in f if line.strip()}
 
-    if target_username.lower() in current_mods:
-        current_mods.remove(target_username.lower())
-        add_notification(target_username, "⚠️ Your Moderator permissions have been revoked by @Mear.")
-        flash(f"Moderator privileges revoked from @{target_username}")
+    if target_user_lower in current_mods:
+        current_mods.remove(target_user_lower)
+        add_notification(target_username, f"⚠️ Your Moderator status was revoked by @{session['username']}.")
+        flash(f"Moderator privileges cleanly revoked from @{target_username}!")
     else:
-        current_mods.add(target_username.lower())
-        add_notification(target_username, "👑 Congratulations! @Mear has promoted you to an official Platform Moderator!")
-        flash(f"@{target_username} successfully promoted to Moderator!")
+        current_mods.add(target_user_lower)
+        add_notification(target_username, f"👑 Congratulations! @{session['username']} has promoted you to a Platform Moderator!")
+        flash(f"@{target_username} successfully promoted to an active Platform Moderator!")
 
-    # Write clean state back to disk
+    # Write clean state back to disk ledger space safely
     with open(MODERATORS_FILE, "w", encoding="utf-8") as f:
         for mod in current_mods:
             f.write(mod + "\n")
 
     return redirect(url_for('feed', profile=target_username))
+
 @app.route('/upload_pfp', methods=['POST'])
 def upload_pfp():
     if 'username' not in session:
