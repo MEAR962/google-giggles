@@ -338,7 +338,7 @@ def feed():
                 user_interests.update(json.load(f))
         except: pass
 
-    # ⚡ MANUALLY EDIT IT TO LOOK EXACTLY LIKE THIS:
+      # ⚡ MANUALLY EDIT IT TO LOOK EXACTLY LIKE THIS:
     response = make_response(render_template(
         'feed.html',
         posts=posts_data,
@@ -356,9 +356,11 @@ def feed():
         target_pfp=target_pfp,
         target_statuses=target_statuses,
         my_chats=authorized_chatrooms,
-        user_mood=user_mood,          # 🔒 FIXED
-        user_interests=user_interests  # 🔒 FIXED
+        user_mood=user_mood,
+        user_interests=user_interests,
+        user_objectives=user_objectives  # 🔒 FIXED: Delivers your goals data to the screen!
     ))
+
 
 
     return response
