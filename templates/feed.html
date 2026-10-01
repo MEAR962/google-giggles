@@ -572,11 +572,17 @@
                 }
 
                 // 2. Swap out the sidebar profile picture header card (including text thoughts!) safely
+                // 2. Swap out the sidebar profile picture header card safely (ONLY if you aren't currently typing!)
                 const newProfileCard = newDoc.querySelector('.profile-header-card');
                 const currentProfileCard = document.querySelector('.profile-header-card');
-                if (newProfileCard && currentProfileCard) {
+
+                // 🔒 SHIELD LAYER: If you are currently typing in a textarea or input field, do NOT overwrite it!
+                const userIsTyping = document.activeElement && (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT');
+
+                if (newProfileCard && currentProfileCard && !userIsTyping) {
                     currentProfileCard.innerHTML = newProfileCard.innerHTML;
                 }
+
 
                 // Re-bind the video scroll observer instantly to hook any newly appeared video elements
                 document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
