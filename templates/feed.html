@@ -451,7 +451,7 @@
                             {% endfor %}
                         </div>
 
-                        <form class="comment-form" action="/comment/{{ post.filename }}" method="POST">
+                        <form class="comment-form ajax-comment-form" action="/comment/{{ post.filename }}" method="POST" style="display: flex; gap: 8px;">
                             <input type="text" name="comment" class="comment-input" placeholder="Add a comment..." required>
                             <button type="submit" class="comment-submit">Post</button>
                         </form>
@@ -685,12 +685,12 @@
         // Intercept any comment form submission across the entire scrolling timeline
         if (e.target && e.target.classList.contains('comment-form')) {
             e.preventDefault(); // 🔒 STOP the forced full-page browser refresh loop completely
-            
+
             const form = e.target;
             const inputField = form.querySelector('.comment-input');
             const commentSection = form.closest('.engagement-container').querySelector('.comment-section');
             const commentText = inputField.value.trim();
-            
+
             if (!commentText) return;
 
             // Transmit the comment data payload to the server behind the scenes
@@ -715,9 +715,9 @@
                 const newCommentElement = document.createElement('div');
                 newCommentElement.className = 'comment-item';
                 newCommentElement.textContent = `@{current_user}: ${commentText}`.replace('@{current_user}', '{{ current_user }}');
-                
+
                 commentSection.appendChild(newCommentElement);
-                
+
                 // Auto-scroll the inner comment compartment to the bottom so you can see it print live
                 commentSection.scrollTop = commentSection.scrollHeight;
             } catch (err) {
