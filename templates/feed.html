@@ -545,9 +545,11 @@
 
     async function syncPlatformAssetsLive() {
         try {
-            const profileParam = new URLSearchParams(window.location.search).get('profile') || '';
+            // Get current URL location parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const profileParam = urlParams.get('profile') || '';
 
-            // 1. SILENT AUTO-FEED INJECTOR: Pulls post registry logs down without a popup banner
+            // 1. SILENT AUTO-FEED INJECTOR
             const feedCheck = await fetch(`/api/feed_count?profile=${profileParam}`);
             const feedData = await feedCheck.json();
 
@@ -556,37 +558,37 @@
             } else if (feedData.count > currentTotalPostCount) {
                 currentTotalPostCount = feedData.count;
 
-                // 🔄 BACKGROUND RE-FETCH: Grabs updated template structures seamlessly
+                // 🔒 PROFILE SECURITY BUFFER: If a user is on a profile dashboard page view,
+                // stop the background sync completely to protect active text edits/inputs from being wiped out!
+                if (profileParam !== '') {
+                    return;
+                }
+
+                // 🔄 BACKGROUND RE-FETCH: Only handles silent injections on the main Home Feed layout
                 const response = await fetch(window.location.href);
                 const htmlText = await response.text();
 
-                // Swaps out ONLY the center scroll container to prevent page resets
                 const parser = new DOMParser();
                 const newDoc = parser.parseFromString(htmlText, 'text/html');
 
-                // 1. Swap out the central scrolling feed grid cleanly
                 const newFeed = newDoc.querySelector('.feed-container');
                 const currentFeed = document.querySelector('.feed-container');
                 if (newFeed && currentFeed) {
                     currentFeed.innerHTML = newFeed.innerHTML;
                 }
 
-                // 2. Swap out the sidebar profile picture header card (including text thoughts!) safely
                 // 2. Swap out the sidebar profile picture header card safely (ONLY if you aren't currently typing!)
                 const newProfileCard = newDoc.querySelector('.profile-header-card');
                 const currentProfileCard = document.querySelector('.profile-header-card');
 
-                // 🔒 SHIELD LAYER: If you are currently typing in a textarea or input field, do NOT overwrite it!
                 const userIsTyping = document.activeElement && (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT');
 
                 if (newProfileCard && currentProfileCard && !userIsTyping) {
                     currentProfileCard.innerHTML = newProfileCard.innerHTML;
                 }
 
-
                 // Re-bind the video scroll observer instantly to hook any newly appeared video elements
                 document.querySelectorAll('.post-card').forEach(card => videoObserver.observe(card));
-
             }
 
             // 2. LIVE SIDEBAR NOTIFICATION PIPELINE
