@@ -683,7 +683,7 @@
         // 💬 SILENT AJAX COMMENT SUBMITTER ENGINE: Submits text without resetting the feed order
     document.addEventListener('submit', async function(e) {
         // Intercept any comment form submission across the entire scrolling timeline
-        if (e.target && e.target.classList.contains('comment-form')) {
+        if (e.target && e.target.getAttribute('action') && e.target.getAttribute('action').startsWith('/comment/')) {
             e.preventDefault(); // 🔒 STOP the forced full-page browser refresh loop completely
 
             const form = e.target;
